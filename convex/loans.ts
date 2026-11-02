@@ -198,7 +198,9 @@ export async function toLoanView(
       type: e.type,
       event: e.event,
       status: e.status,
+      attempts: e.attempts,
       message: e.message,
+      lastError: e.lastError,
       updatedAt: e.updatedAt,
     })),
   };
