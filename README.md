@@ -8,6 +8,9 @@ marks them returned. n8n handles the automation: a notification on every request
 change, and a daily reminder for overdue loans. Every run is written back to the app, so
 each loan shows activity such as _"Approval notification sent 1 hour ago"_.
 
+The UI updates live across users (Convex subscriptions), works on phones, and has a
+Light / Dark / System theme switch in the header.
+
 **Stack:** Next.js 16 (App Router, TypeScript strict) · Clerk · Convex · n8n (self-hosted,
 Docker) · Tailwind CSS 4 · Vitest + convex-test
 
@@ -16,7 +19,8 @@ Docker) · Tailwind CSS 4 · Vitest + convex-test
 ## Contents
 
 1. [Architecture](#architecture)
-2. [Local setup](#local-setup)
+2. [Local setup](#local-setup) (includes [Windows notes](#windows-notes) and
+   [Troubleshooting](#troubleshooting))
 3. [Environment variables](#environment-variables)
 4. [Test accounts and making an admin](#test-accounts-and-making-an-admin)
 5. [Security decisions](#security-decisions)
@@ -100,154 +104,298 @@ execution (idempotent on the execution id).
 
 ## Local setup
 
-**Requirements:** Node.js ≥ 20.9 (developed on 24), npm, Docker Desktop, a Clerk account and
-a Convex account (both have free tiers).
+**Requirements:** Node.js ≥ 20.9 (developed on 24), npm,
+[Docker Desktop](https://www.docker.com/products/docker-desktop/), and a free
+[Clerk](https://clerk.com) account. A Convex account is optional (see step 3).
+
+> **Windows:** read [Windows notes](#windows-notes) once before starting. Where a command
+> differs between PowerShell and Git Bash / macOS / Linux, both versions are shown.
+
+You'll end up with **three things running** at once (n8n runs in the background in Docker):
+
+| Where      | Command          | What it is                                |
+| ---------- | ---------------- | ----------------------------------------- |
+| Terminal 1 | `npx convex dev` | Convex backend + pushes functions on save |
+| Terminal 2 | `npm run dev`    | The app at <http://localhost:3000>        |
+| Docker     | `docker compose` | n8n at <http://localhost:5678>            |
 
 ### 1. Install
 
 ```bash
-git clone <repo-url> lendloop && cd lendloop
+git clone <repo-url> lendloop
+cd lendloop
 npm install
 ```
 
 ### 2. Clerk
 
-1. Create an application at [dashboard.clerk.com](https://dashboard.clerk.com) with **Email**
-   sign-in.
-2. **Configure → JWT templates → New template → Convex.** Keep the name **`convex`**. Check
-   that the claims include `email`, `name` and `email_verified` (the Convex preset includes
-   them), then save.
-3. Copy the template's **Issuer** URL (e.g. `https://your-app.clerk.accounts.dev`).
-4. From **API keys**, copy the publishable and secret keys.
+1. Create an application at [dashboard.clerk.com](https://dashboard.clerk.com) with
+   **Email** as the sign-in method. Leave phone and username off, so sign-up only asks for
+   an email (and optionally a password).
+2. **Configure → JWT templates → New template → Convex.** Keep the name exactly **`convex`**
+   (lowercase). Keep the preset claims: they include `"aud": "convex"`, `email`, `name` and
+   `email_verified`, which the app needs. Leave **Custom signing key** off. Save.
+3. Copy the template's **Issuer** URL (e.g. `https://your-app-12.clerk.accounts.dev`).
+4. From **Configure → API keys**, copy the **publishable** and **secret** keys.
 
-Create `.env.local` in the project root:
+Create `.env.local` in the project root with the two keys (or copy
+[`.env.example`](./.env.example)):
 
 ```bash
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 ```
 
+The Convex CLI adds its own lines to this file in the next step; leave them there.
+
 ### 3. Convex
+
+In **terminal 1**:
 
 ```bash
 npx convex dev
 ```
 
-This logs you in, creates a project, writes `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL`
-to `.env.local`, and keeps pushing functions as you edit. The first push fails until the
-issuer is set. In a second terminal:
+On first run the CLI asks how to set up the backend. Pick one:
+
+- **Local (recommended, no account needed):** choose to run **locally without an
+  account**. The backend runs on your machine at `http://127.0.0.1:3210`, with HTTP actions
+  on port `3211`. This is the simplest setup with n8n because no tunnel is needed.
+- **Convex Cloud:** log in and create a project. You'll need the tunnel in step 5d,
+  because Convex Cloud can't reach `localhost`.
+
+Either way the CLI writes `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` to `.env.local`
+and keeps running, pushing functions as you edit. **Leave it running:** both the app and
+n8n need it. The first push may fail until the issuer below is set; that's expected.
+
+In a **second terminal**, set the Convex environment variables:
 
 ```bash
-npx convex env set CLERK_JWT_ISSUER_DOMAIN https://your-app.clerk.accounts.dev
-npx convex env set ADMIN_EMAILS you@example.com
-
-# HMAC secrets (one per direction). Generate two different values:
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-npx convex env set CONVEX_TO_N8N_SECRET <secret-1>
-npx convex env set N8N_TO_CONVEX_SECRET <secret-2>
+npx convex env set CLERK_JWT_ISSUER_DOMAIN https://your-app-12.clerk.accounts.dev
+npx convex env set ADMIN_EMAILS admin+clerk_test@example.com
 ```
 
-`N8N_WEBHOOK_URL` is set in step 5, once n8n is running.
+`ADMIN_EMAILS` is the email (or comma-separated emails) that becomes admin on **first**
+sign-in, so set it before that account signs up. See
+[Test accounts](#test-accounts-and-making-an-admin).
+
+Next, the two HMAC secrets, one per direction. Run the generator **twice** and use a
+**different** value for each:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+npx convex env set CONVEX_TO_N8N_SECRET <first-value>
+npx convex env set N8N_TO_CONVEX_SECRET <second-value>
+```
+
+Check that `npx convex env list` shows these four names. (`N8N_WEBHOOK_URL` is added in
+step 5d.) Terminal 1 should now print **"Convex functions ready!"**; if it showed an auth
+error earlier, save any file or restart it.
 
 ### 4. Run the app
 
+In **terminal 2**:
+
 ```bash
-npm run dev   # http://localhost:3000
+npm run dev
 ```
 
-Sign in. Your user row is created on first load, and if your email is in `ADMIN_EMAILS` you
-get the **Admin** tab. You can list, borrow, approve and return now. Notifications show
-_"notification failed"_ until n8n is connected, which is intentional: nothing fails silently.
+Open <http://localhost:3000> and **sign up** (not sign in; see
+[Test accounts](#test-accounts-and-making-an-admin)). Your user row is created on first
+load, and if your email is in `ADMIN_EMAILS` you get the **Admin** tab. You can already list,
+borrow, approve and return. Until n8n is connected, notifications show
+_"notification failed"_. That's intentional: nothing fails silently.
 
 ### 5. n8n
 
+**a. Create `n8n/.env`** from the template:
+
 ```bash
+# PowerShell
+Copy-Item n8n/.env.example n8n/.env
+# Git Bash / macOS / Linux
 cp n8n/.env.example n8n/.env
 ```
 
-Fill in `n8n/.env`:
+Fill it in. The two secrets must be **identical** to the Convex values from step 3. Print
+them with `npx convex env get CONVEX_TO_N8N_SECRET` and
+`npx convex env get N8N_TO_CONVEX_SECRET`.
 
-| Variable               | Value                                                                                     |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `CONVEX_SITE_URL`      | Your deployment's **`.convex.site`** URL (Convex dashboard → Settings → URL & deploy key) |
-| `CONVEX_TO_N8N_SECRET` | Same value as the Convex env var                                                          |
-| `N8N_TO_CONVEX_SECRET` | Same value as the Convex env var                                                          |
-| `N8N_ENCRYPTION_KEY`   | Any long random string; keep it stable                                                    |
+| Variable               | Local Convex                       | Convex Cloud                                             |
+| ---------------------- | ---------------------------------- | -------------------------------------------------------- |
+| `CONVEX_SITE_URL`      | `http://host.docker.internal:3211` | Your **`.convex.site`** URL (dashboard → Settings → URL) |
+| `CONVEX_TO_N8N_SECRET` | Same as the Convex env var         | Same as the Convex env var                               |
+| `N8N_TO_CONVEX_SECRET` | Same as the Convex env var         | Same as the Convex env var                               |
+| `N8N_ENCRYPTION_KEY`   | Any long random string; keep it    | Any long random string; keep it                          |
 
-Then:
+`CONVEX_SITE_URL` is the **`.convex.site`** (HTTP actions) URL, not `.convex.cloud`. For a
+local backend that means port **3211**, not 3210.
+
+**b. Start n8n and import the workflows.** Docker Desktop must be running (its whale icon
+says _"Engine running"_). The Docker Desktop app can't start a compose file, so use the
+terminal:
 
 ```bash
 docker compose up -d
 docker compose exec n8n n8n import:workflow --separate --input=/workflows
 ```
 
-Open <http://localhost:5678>, create the owner account, then:
+The first `up` downloads the n8n image, which is a few hundred MB. The container then
+appears in Docker Desktop → **Containers** as `lendloop` → `n8n`. Wait until it shows
+**Running**.
 
-1. Open **LendLoop - Loan notifications** and **LendLoop - Overdue reminders**. In each one's
-   **Settings**, check that **Error workflow** is **LendLoop - Error handler** (the exports
-   reference it by id; re-select it if your n8n assigned new ids).
-2. **Activate** all three workflows. The Error Trigger only fires for active workflows.
-3. **No n8n credentials need to be created.** The workflows read the URL and secrets from
+**c. Set up n8n** at <http://localhost:5678>:
+
+1. Create the owner account. It's local only, so any email and password will do.
+2. Open **LendLoop - Loan notifications** and **LendLoop - Overdue reminders**. In each one,
+   open **⋯ → Settings** and check that **Error workflow** is **LendLoop - Error handler**.
+   Re-select it if your n8n assigned new ids, then save.
+3. **Publish** all three workflows with the **Publish** button at the top right of each.
+   n8n 2.x replaced the old "Active" toggle with Publish, and the webhook URL only works
+   once _Loan notifications_ is published.
+4. **No n8n credentials need to be created.** The workflows read the URL and secrets from
    the container environment (`$env`), so the exported JSON contains no secrets.
 
-**Point Convex at the webhook.** Convex Cloud can't reach `localhost`, so expose n8n with the
-bundled tunnel:
+**d. Point Convex at the webhook.**
+
+With **local Convex**, Convex calls n8n directly:
+
+```bash
+npx convex env set N8N_WEBHOOK_URL http://localhost:5678/webhook/lendloop-loan-events
+```
+
+With **Convex Cloud**, expose n8n with the bundled Cloudflare tunnel, then use its URL:
 
 ```bash
 docker compose --profile tunnel up -d
-docker compose logs tunnel | grep trycloudflare.com
+docker compose logs tunnel        # find the https://<random>.trycloudflare.com line
 npx convex env set N8N_WEBHOOK_URL https://<random>.trycloudflare.com/webhook/lendloop-loan-events
 ```
 
-<details>
-<summary>Fully local alternative (no tunnel)</summary>
+The tunnel URL changes every time the tunnel restarts, so set it again when that happens.
 
-Run Convex locally with `npx convex dev --local`. Then Convex can call n8n directly:
-`N8N_WEBHOOK_URL=http://localhost:5678/webhook/lendloop-loan-events`. n8n reaches Convex via
-`CONVEX_SITE_URL=http://host.docker.internal:3211`.
+**e. Check the wiring.** Each command should print what its comment shows. For Convex
+Cloud, use your `.convex.site` URL instead of `http://127.0.0.1:3211`.
 
-</details>
+```bash
+# PowerShell
+$env:CONVEX_SITE_URL="http://127.0.0.1:3211"; $env:N8N_TO_CONVEX_SECRET="<second-value>"
+node scripts/signed-request.mjs n8n/overdue-loans '{}'                   # 200 {"today":...}
+node scripts/signed-request.mjs n8n/overdue-loans '{}' --bad-signature   # 401
+
+# Git Bash / macOS / Linux
+export CONVEX_SITE_URL=http://127.0.0.1:3211 N8N_TO_CONVEX_SECRET=<second-value>
+node scripts/signed-request.mjs n8n/overdue-loans '{}'                   # 200 {"today":...}
+node scripts/signed-request.mjs n8n/overdue-loans '{}' --bad-signature   # 401
+```
+
+```bash
+curl -X POST http://localhost:5678/webhook/lendloop-loan-events -H "Content-Type: application/json" -d "{}"
+# {"error":"Unauthorized"}  → the workflow is published and checks signatures
+```
+
+In Windows PowerShell 5, use `curl.exe` instead of `curl`.
 
 ### 6. Try it end to end
 
-1. As user A, list a tool. As user B (a second browser or private window), request it.
-2. Watch the n8n execution. The log shows `[LendLoop mock notification] to=a***@…`, and B's
-   request card under **Incoming** (signed in as A) shows _"Request notification sent just
-   now"_.
-3. Approve it, then check B's **My requests**.
-4. To test reminders without waiting a day, make a loan overdue in the Convex dashboard (edit
-   an approved loan's `endDate` to a past date), then click **Execute workflow** on
-   _Overdue reminders_. Run it twice: the second run finds nothing, because Convex skips loans
-   already reminded today.
-5. To test failure handling, stop n8n (`docker compose stop n8n`) and approve a request. The
-   card shows _"retrying"_ and then _"failed after 5 attempts"_, and an error event is
-   recorded.
+Use two test accounts with code **`424242`** (no inbox needed): Alice in a normal window and
+Bob in a private/incognito window.
 
-You can also call the Convex endpoints directly with a signed request:
+**Workflow 1: notifications**
+
+1. As Alice, go to **My listings → List a tool**.
+2. As Bob, go to **Browse**, click **Request**, pick dates, then **Send request**.
+3. As Alice, open **Incoming**. Within a few seconds the card shows
+   _"Request notification sent just now"_. In n8n, **Executions** shows the run, and the
+   container logs (`docker compose logs n8n`, or Docker Desktop → Logs) show
+   `[LendLoop mock notification] to=a***@…`.
+4. Click **Approve**. Bob's **My requests** updates live and shows _"Approval notification
+   sent"_. Then click **Mark returned** as Alice.
+
+**Workflow 2: overdue reminders** (without waiting for the 08:00 UTC schedule)
+
+1. Have Bob request a tool and Alice **approve** it. **Don't** mark it returned: only
+   approved loans can be overdue.
+2. Open the Convex dashboard with `npx convex dashboard`, go to the **loans** table, and
+   change that loan's `endDate` to a past date (e.g. last week). The card turns red
+   (**Overdue**) right away, because overdue is computed, not stored.
+3. In n8n, open **LendLoop - Overdue reminders** and click **Execute workflow**.
+   _Fetch overdue loans_ returns 1 loan, and the run ends at _Record reminder in Convex_. The
+   card shows _"Overdue reminder sent just now"_.
+4. Click **Execute workflow** again. It finds **0** loans, because Convex skips loans
+   already reminded today (idempotency key `reminder:<loanId>:<date>`).
+
+**Error workflow** (an n8n run fails → Error handler → Convex)
 
 ```bash
-CONVEX_SITE_URL=https://xxx.convex.site N8N_TO_CONVEX_SECRET=<secret-2> \
-  node scripts/signed-request.mjs /n8n/overdue-loans '{}'
-# add --bad-signature to see the 401
+# PowerShell
+$env:N8N_WEBHOOK_URL="http://localhost:5678/webhook/lendloop-loan-events"; $env:CONVEX_TO_N8N_SECRET="<first-value>"
+node scripts/trigger-n8n-failure.mjs
+
+# Git Bash / macOS / Linux
+export N8N_WEBHOOK_URL=http://localhost:5678/webhook/lendloop-loan-events CONVEX_TO_N8N_SECRET=<first-value>
+node scripts/trigger-n8n-failure.mjs
 ```
+
+The script sends a correctly signed event whose event id doesn't exist. n8n logs three
+`404 Unknown event` retries, the run fails (`500`), and the **Error handler** records it in
+Convex. `npx convex data automationEvents --limit 1` then shows `type: "error"`,
+`event: "workflow_failed"` and _"…failed at "Record in Convex""_. In n8n, **Executions**
+shows both the failed run and the Error handler run.
+
+**Convex retries** (n8n is down → Convex backs off, then records the failure)
+
+Stop n8n with `docker compose stop n8n` and have Bob send a request. The card shows
+_"retrying"_, then about 90 seconds later _"failed after 5 attempts"_, and an error event is
+recorded. Start n8n again with `docker compose start n8n`.
+
+### Windows notes
+
+- **`docker` not found** right after installing Docker Desktop: open a **new** terminal so
+  it picks up the updated `PATH`.
+- **Setting environment variables for a command:** Git Bash accepts `VAR=value command`
+  and `export VAR=value`. In PowerShell, set them first with `$env:VAR="value"`, then run
+  the command.
+- **Git Bash rewrites arguments that start with `/`** into Windows paths (so
+  `/n8n/overdue-loans` becomes `C:/Program Files/Git/n8n/...`). That's why the examples
+  pass `n8n/overdue-loans` without a leading slash. You can also prefix a command with
+  `MSYS_NO_PATHCONV=1`.
+- `cp` and `curl` behave differently in PowerShell. The examples above give PowerShell
+  versions where it matters.
+
+### Troubleshooting
+
+| Symptom                                                      | Cause and fix                                                                                                                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Clerk says _"Couldn't find your account"_                    | The account doesn't exist yet. Click **Sign up** at the bottom of the Clerk dialog. Test emails still need to sign up once.                                        |
+| Signed in, but pages show an auth error or keep loading      | `CLERK_JWT_ISSUER_DOMAIN` is missing or wrong, or the JWT template isn't named `convex`. Fix it, then check that terminal 1 prints _"Convex functions ready!"_.    |
+| No **Admin** tab for the admin email                         | The account was created before `ADMIN_EMAILS` was set, or its email isn't verified. Promote it with `npx convex run admin:setRole '{"email":"…","role":"admin"}'`. |
+| App loads but shows no data; n8n logs _"connection refused"_ | `npx convex dev` isn't running (for example after a reboot). Start it again in terminal 1.                                                                         |
+| Cards say _"notification failed"_                            | `N8N_WEBHOOK_URL` isn't set, n8n isn't running, or _Loan notifications_ isn't published. Check with the `curl` command in step 5e.                                 |
+| n8n returns `401` to real events                             | `CONVEX_TO_N8N_SECRET` in `n8n/.env` differs from Convex. Fix it, then run `docker compose up -d`, which recreates the container with the new values.              |
+| Convex returns `401` to n8n                                  | The same problem with `N8N_TO_CONVEX_SECRET`.                                                                                                                      |
+| The n8n webhook returns `404`                                | The workflow isn't published, or the URL is wrong. It must end in `/webhook/lendloop-loan-events` (not `/webhook-test/`).                                          |
+| `docker compose up` hangs on the first download              | Restart Docker Desktop (whale icon → Restart) and run it again. This is common right after a fresh install.                                                        |
+| The overdue run finds 0 loans                                | The loan must be **approved** (not requested or returned), its `endDate` must be before today in **UTC**, and it must not have been reminded already today.        |
+| n8n logs `SSL … bad record mac` errors from `api.n8n.io`     | Harmless. This is n8n fetching its community-node catalog, which has nothing to do with LendLoop.                                                                  |
 
 ---
 
 ## Environment variables
 
-| Name                                | Where it's set                | Used by                                   | Example placeholder                      |
-| ----------------------------------- | ----------------------------- | ----------------------------------------- | ---------------------------------------- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `.env.local`                  | Next.js (Clerk UI)                        | `pk_test_xxx`                            |
-| `CLERK_SECRET_KEY`                  | `.env.local`                  | Next.js server (`proxy.ts`)               | `sk_test_xxx`                            |
-| `CONVEX_DEPLOYMENT`                 | `.env.local` (written by CLI) | Convex CLI                                | `dev:happy-otter-123`                    |
-| `NEXT_PUBLIC_CONVEX_URL`            | `.env.local` (written by CLI) | Next.js (Convex client)                   | `https://happy-otter-123.convex.cloud`   |
-| `CLERK_JWT_ISSUER_DOMAIN`           | Convex env                    | `convex/auth.config.ts`                   | `https://your-app.clerk.accounts.dev`    |
-| `ADMIN_EMAILS`                      | Convex env                    | `users.ensureCurrentUser` (first sign-in) | `you@example.com,ops@example.com`        |
-| `N8N_WEBHOOK_URL`                   | Convex env                    | `automation.deliverNotification`          | `https://…/webhook/lendloop-loan-events` |
-| `CONVEX_TO_N8N_SECRET`              | Convex env **and** `n8n/.env` | Convex signs, n8n verifies                | 64 hex chars                             |
-| `N8N_TO_CONVEX_SECRET`              | Convex env **and** `n8n/.env` | n8n signs, Convex `http.ts` verifies      | 64 hex chars (different value)           |
-| `CONVEX_SITE_URL`                   | `n8n/.env`                    | n8n HTTP Request nodes                    | `https://happy-otter-123.convex.site`    |
-| `N8N_ENCRYPTION_KEY`                | `n8n/.env`                    | n8n credential encryption                 | long random string                       |
+| Name                                | Where it's set                | Used by                                   | Example placeholder                                                                 |
+| ----------------------------------- | ----------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `.env.local`                  | Next.js (Clerk UI)                        | `pk_test_xxx`                                                                       |
+| `CLERK_SECRET_KEY`                  | `.env.local`                  | Next.js server (`proxy.ts`)               | `sk_test_xxx`                                                                       |
+| `CONVEX_DEPLOYMENT`                 | `.env.local` (written by CLI) | Convex CLI                                | `dev:happy-otter-123`                                                               |
+| `NEXT_PUBLIC_CONVEX_URL`            | `.env.local` (written by CLI) | Next.js (Convex client)                   | `https://happy-otter-123.convex.cloud`                                              |
+| `CLERK_JWT_ISSUER_DOMAIN`           | Convex env                    | `convex/auth.config.ts`                   | `https://your-app.clerk.accounts.dev`                                               |
+| `ADMIN_EMAILS`                      | Convex env                    | `users.ensureCurrentUser` (first sign-in) | `you@example.com,ops@example.com`                                                   |
+| `N8N_WEBHOOK_URL`                   | Convex env                    | `automation.deliverNotification`          | `http://localhost:5678/webhook/lendloop-loan-events` (local)                        |
+| `CONVEX_TO_N8N_SECRET`              | Convex env **and** `n8n/.env` | Convex signs, n8n verifies                | 64 hex chars                                                                        |
+| `N8N_TO_CONVEX_SECRET`              | Convex env **and** `n8n/.env` | n8n signs, Convex `http.ts` verifies      | 64 hex chars (different value)                                                      |
+| `CONVEX_SITE_URL`                   | `n8n/.env`                    | n8n HTTP Request nodes                    | `https://happy-otter-123.convex.site` or `http://host.docker.internal:3211` (local) |
+| `N8N_ENCRYPTION_KEY`                | `n8n/.env`                    | n8n credential encryption                 | long random string                                                                  |
 
 Templates: [`.env.example`](./.env.example) and [`n8n/.env.example`](./n8n/.env.example).
 All `.env*` files are gitignored except those templates.
@@ -258,7 +406,9 @@ All `.env*` files are gitignored except those templates.
 
 Clerk development instances accept **test emails**: any address containing `+clerk_test`
 (e.g. `alice+clerk_test@example.com`) signs in with the verification code **`424242`**, so
-no inbox is needed. Suggested accounts:
+no inbox is needed. **Sign up** with each address the first time (Clerk's sign-in only
+works for existing accounts and otherwise says _"Couldn't find your account"_); after that,
+sign in with the same code. Suggested accounts:
 
 | Account                        | Role                                                  |
 | ------------------------------ | ----------------------------------------------------- |
@@ -411,7 +561,8 @@ the real functions against an in-memory backend, with Clerk identities simulated
 
 ```
 app/                    Pages (App Router): /, /tools, /listings, /requests, /incoming, /admin
-components/             UI: providers, badges, ToolForm, RequestLoanDialog, LoanCard, ActivityList, ui/*
+components/             UI: providers, badges, ToolForm, RequestLoanDialog, LoanCard, ActivityList,
+                        SiteHeader/Footer, ThemeToggle, ui/* (icons, modal, states)
 convex/
   schema.ts             Tables + indexes
   auth.config.ts        Trusts Clerk JWTs (audience "convex")
@@ -421,9 +572,10 @@ convex/
   automation.ts         Internal: outbox delivery, payload builders, write-backs
   http.ts               Signed endpoints for n8n
   lib/                  auth, hmac, loanStatus, dates, outbox, retry, validators, constants
-lib/                    Client helpers (error messages, formatting, mutation runner)
+lib/                    Client helpers (error messages, formatting, mutation runner, theme)
 n8n/workflows/          Exported workflow JSON (no secrets)
-scripts/                signed-request.mjs for manual endpoint testing
+scripts/                signed-request.mjs (call Convex endpoints as n8n does),
+                        trigger-n8n-failure.mjs (test the n8n Error workflow)
 proxy.ts                Clerk route protection (Next 16's "middleware")
 docker-compose.yml      n8n (+ optional cloudflared tunnel)
 ```
