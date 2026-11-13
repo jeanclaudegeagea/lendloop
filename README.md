@@ -4,9 +4,9 @@
 
 ![Incoming requests: approve or decline, an overdue loan, and the n8n notification activity on every loan](docs/screenshots/incoming.png)
 
-| Public page (no sign-in)                                             | Browse tools                                                                       | My requests, dark mode                                                                                 |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| ![Landing page with the public tool list](docs/screenshots/home.png) | ![Browse page with category filters and availability](docs/screenshots/browse.png) | ![My requests in dark mode with cancel and automation activity](docs/screenshots/my-requests-dark.png) |
+| Public page (no sign-in)                                                                | Browse tools                                                                       | My requests, dark mode                                                                                 |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| ![Public page: tool names and categories only, plus Sign in](docs/screenshots/home.png) | ![Browse page with category filters and availability](docs/screenshots/browse.png) | ![My requests in dark mode with cancel and automation activity](docs/screenshots/my-requests-dark.png) |
 
 LendLoop is a neighborhood tool-lending board. Neighbors list tools they're willing to
 lend, request to borrow each other's tools for a date range, and the owner approves,
