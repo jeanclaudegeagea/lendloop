@@ -107,9 +107,6 @@ export const LockIcon = icon(
     <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
   </>,
 );
-export const SparkleIcon = icon(
-  <path d="M12 3.5 13.9 9l5.6 2-5.6 2L12 18.5 10.1 13l-5.6-2 5.6-2Z" />,
-);
 export const HandshakeIcon = icon(
   <>
     <path d="m11 17 2 2a1.4 1.4 0 0 0 2-2" />

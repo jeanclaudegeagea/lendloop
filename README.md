@@ -538,7 +538,7 @@ provider, pass `eventId` as the provider's idempotency key (noted in the workflo
 ## Testing
 
 ```bash
-npm test          # Vitest: 65 tests
+npm test          # Vitest: 66 tests
 npm run lint      # ESLint (next + typescript + prettier-compat)
 npm run typecheck # tsc --noEmit
 npm run build     # production build

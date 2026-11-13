@@ -210,6 +210,25 @@ describe("loan permissions and transitions", () => {
   });
 });
 
+describe("display names", () => {
+  it("never falls back to the email address, since other users see the name", async () => {
+    const noName = await signIn(t, {
+      subject: "user_noname",
+      email: "john.smith@example.com",
+      emailVerified: true,
+    });
+    expect((await noName.query(api.users.me, {}))?.name).toBe("Neighbor");
+
+    const withUsername = await signIn(t, {
+      subject: "user_handle",
+      nickname: "jsmith",
+      email: "j@example.com",
+      emailVerified: true,
+    });
+    expect((await withUsername.query(api.users.me, {}))?.name).toBe("jsmith");
+  });
+});
+
 describe("admin role", () => {
   it("non-admins can't use admin functions", async () => {
     const { bob, toolId } = await aliceToolWithBobRequest();

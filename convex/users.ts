@@ -18,8 +18,9 @@ export const ensureCurrentUser = mutation({
     if (!identity) fail("UNAUTHENTICATED", "You need to sign in.");
 
     const email = (identity.email ?? "").toLowerCase();
-    const name =
-      identity.name?.trim() || identity.nickname || email.split("@")[0] || "Neighbor";
+    // Display names are shown to other users, so never derive one from the
+    // email address: fall back to the Clerk username, then "Neighbor".
+    const name = identity.name?.trim() || identity.nickname?.trim() || "Neighbor";
 
     const existing = await ctx.db
       .query("users")

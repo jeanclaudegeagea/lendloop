@@ -1,5 +1,4 @@
 import type { DisplayStatus } from "@/convex/lib/loanStatus";
-import { CATEGORY_LABELS, type ToolCategory } from "@/convex/lib/constants";
 
 const STATUS_STYLES: Record<DisplayStatus, { pill: string; dot: string }> = {
   requested: {
@@ -53,14 +52,6 @@ export function AvailabilityBadge({
     <span className={`${pill} bg-zinc-100 text-zinc-600 ring-zinc-200`}>
       <span aria-hidden className="size-1.5 rounded-full bg-zinc-400" />
       On loan
-    </span>
-  );
-}
-
-export function CategoryBadge({ category }: { category: ToolCategory }) {
-  return (
-    <span className={`${pill} bg-white text-zinc-600 ring-zinc-200`}>
-      {CATEGORY_LABELS[category]}
     </span>
   );
 }
