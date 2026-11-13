@@ -5,10 +5,17 @@ import type { FunctionReturnType } from "convex/server";
 import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
-import { CONDITION_LABELS } from "@/convex/lib/constants";
-import { AvailabilityBadge, CategoryBadge } from "@/components/badges";
+import { CATEGORY_LABELS, CONDITION_LABELS } from "@/convex/lib/constants";
+import { AvailabilityBadge } from "@/components/badges";
 import { RequireUser } from "@/components/RequireUser";
 import { ToolForm, type ToolFormValues } from "@/components/ToolForm";
+import {
+  ArrowRightIcon,
+  CategoryTile,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/ui/icons";
 import { Modal } from "@/components/ui/Modal";
 import {
   EmptyState,
@@ -25,10 +32,12 @@ export default function MyListingsPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Lending"
         title="My listings"
-        description="Tools you're willing to lend."
+        description="Tools you're willing to lend to your neighbors."
         action={
           <button type="button" className="btn-primary" onClick={() => setCreating(true)}>
+            <PlusIcon />
             List a tool
           </button>
         }
@@ -57,6 +66,7 @@ function MyToolList({ onCreate }: { onCreate: () => void }) {
         description="List a tool you don't use every day and help a neighbor out."
         action={
           <button type="button" className="btn-primary" onClick={onCreate}>
+            <PlusIcon />
             List your first tool
           </button>
         }
@@ -79,38 +89,42 @@ function MyToolRow({ tool, onEdit }: { tool: MyTool; onEdit: () => void }) {
   const remove = useMutationRunner(useMutation(api.tools.remove));
   return (
     <li className="card">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <CategoryTile category={tool.category} size="lg" />
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{tool.name}</h3>
+            <h3 className="font-semibold tracking-tight text-zinc-900">{tool.name}</h3>
             <AvailabilityBadge availability={tool.availability} />
           </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <CategoryBadge category={tool.category} />
-            <span className="text-xs text-stone-500">
-              Condition: {CONDITION_LABELS[tool.condition]}
-            </span>
-          </div>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            {CATEGORY_LABELS[tool.category]} · {CONDITION_LABELS[tool.condition]}{" "}
+            condition
+          </p>
           {tool.description && (
-            <p className="mt-2 text-sm text-stone-600">{tool.description}</p>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+              {tool.description}
+            </p>
           )}
           {tool.pendingRequests > 0 && (
             <Link
               href="/incoming"
-              className="mt-2 inline-block text-sm font-medium text-amber-700 hover:underline"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200/80 transition-colors ring-inset hover:bg-amber-100"
             >
+              <span className="size-1.5 rounded-full bg-amber-500" />
               {tool.pendingRequests} pending request
-              {tool.pendingRequests === 1 ? "" : "s"} →
+              {tool.pendingRequests === 1 ? "" : "s"}
+              <ArrowRightIcon className="size-3" />
             </Link>
           )}
         </div>
-        <div className="flex gap-2">
-          <button type="button" className="btn-secondary" onClick={onEdit}>
+        <div className="flex gap-2 sm:shrink-0">
+          <button type="button" className="btn-secondary btn-sm" onClick={onEdit}>
+            <PencilIcon />
             Edit
           </button>
           <button
             type="button"
-            className="btn-danger"
+            className="btn-danger btn-sm"
             disabled={remove.pending}
             onClick={() => {
               if (
@@ -122,6 +136,7 @@ function MyToolRow({ tool, onEdit }: { tool: MyTool; onEdit: () => void }) {
               }
             }}
           >
+            <TrashIcon />
             {remove.pending ? "Deleting…" : "Delete"}
           </button>
         </div>
@@ -137,7 +152,11 @@ function CreateToolModal({ onClose }: { onClose: () => void }) {
     if ((await create.run(values)).ok) onClose();
   }
   return (
-    <Modal title="List a tool" onClose={onClose}>
+    <Modal
+      title="List a tool"
+      description="Share something you don't use every day."
+      onClose={onClose}
+    >
       <ToolForm
         submitLabel="List tool"
         pending={create.pending}
@@ -155,7 +174,7 @@ function EditToolModal({ tool, onClose }: { tool: MyTool; onClose: () => void })
     if ((await update.run({ toolId: tool._id, ...values })).ok) onClose();
   }
   return (
-    <Modal title={`Edit ${tool.name}`} onClose={onClose}>
+    <Modal title="Edit listing" description={tool.name} onClose={onClose}>
       <ToolForm
         initial={{
           name: tool.name,

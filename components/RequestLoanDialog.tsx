@@ -7,7 +7,8 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { LIMITS } from "@/convex/lib/constants";
 import { rangesOverlap, todayUTC } from "@/convex/lib/dates";
 import { InlineError } from "@/components/ui/states";
-import { Modal } from "@/components/ui/Modal";
+import { CalendarIcon, CheckIcon, ClockIcon } from "@/components/ui/icons";
+import { Modal, ModalActions } from "@/components/ui/Modal";
 import { formatRange } from "@/lib/format";
 import { useMutationRunner } from "@/lib/useMutationRunner";
 
@@ -45,19 +46,31 @@ export function RequestLoanDialog({
   }
 
   return (
-    <Modal title={`Borrow: ${tool.name}`} onClose={onClose}>
+    <Modal
+      title={done ? "Request sent" : `Borrow ${tool.name}`}
+      description={done ? undefined : "Pick the days you'd like to borrow it."}
+      onClose={onClose}
+    >
       {done ? (
-        <div className="space-y-4">
-          <p className="text-sm text-stone-700">
-            Request sent for{" "}
-            <strong>{formatRange(range.startDate, range.endDate)}</strong>. The owner has
-            been notified, and you can follow it under <em>My requests</em>.
-          </p>
-          <div className="flex justify-end">
+        <div>
+          <div className="flex flex-col items-center py-2 text-center">
+            <span className="bg-brand-50 text-brand-700 ring-brand-50/50 flex size-12 items-center justify-center rounded-full ring-8">
+              <CheckIcon className="size-6" />
+            </span>
+            <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+              You asked for <strong className="text-zinc-900">{tool.name}</strong> on{" "}
+              <strong className="text-zinc-900">
+                {formatRange(range.startDate, range.endDate)}
+              </strong>
+              . The owner has been notified, and you can follow it under{" "}
+              <em>My requests</em>.
+            </p>
+          </div>
+          <ModalActions>
             <button type="button" className="btn-primary" onClick={onClose}>
               Done
             </button>
-          </div>
+          </ModalActions>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -97,16 +110,21 @@ export function RequestLoanDialog({
             </div>
           </div>
 
-          <p className="text-xs text-stone-500">
+          <p className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <ClockIcon className="size-3.5" />
             Up to {LIMITS.maxLoanDays} days. Dates are in UTC.
           </p>
 
           {tool.bookedRanges.length > 0 && (
-            <div className="rounded-md bg-stone-50 p-3 text-sm">
-              <p className="font-medium text-stone-700">Already booked</p>
-              <ul className="mt-1 list-inside list-disc text-stone-600">
+            <div className="rounded-xl border border-zinc-200/80 bg-zinc-50 p-3.5">
+              <p className="eyebrow">Already booked</p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
                 {tool.bookedRanges.map((b) => (
-                  <li key={`${b.startDate}-${b.endDate}`}>
+                  <li
+                    key={`${b.startDate}-${b.endDate}`}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1 text-xs font-medium text-zinc-700 ring-1 ring-zinc-200 ring-inset"
+                  >
+                    <CalendarIcon className="size-3 text-zinc-400" />
                     {formatRange(b.startDate, b.endDate)}
                   </li>
                 ))}
@@ -116,7 +134,7 @@ export function RequestLoanDialog({
 
           <InlineError message={clientError ?? request.error} />
 
-          <div className="flex justify-end gap-2">
+          <ModalActions>
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
@@ -127,7 +145,7 @@ export function RequestLoanDialog({
             >
               {request.pending ? "Sending…" : "Send request"}
             </button>
-          </div>
+          </ModalActions>
         </form>
       )}
     </Modal>

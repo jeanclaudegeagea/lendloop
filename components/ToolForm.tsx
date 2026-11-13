@@ -10,6 +10,7 @@ import {
   type ToolCategory,
   type ToolCondition,
 } from "@/convex/lib/constants";
+import { ModalActions } from "@/components/ui/Modal";
 import { InlineError } from "@/components/ui/states";
 
 export type ToolFormValues = {
@@ -115,32 +116,35 @@ export function ToolForm({
 
       <div>
         <label htmlFor="tool-description" className="label">
-          Short description <span className="font-normal text-stone-500">(optional)</span>
+          Short description <span className="font-normal text-zinc-400">(optional)</span>
         </label>
         <textarea
           id="tool-description"
-          className="input min-h-24"
+          className="input min-h-24 resize-y"
           value={values.description}
           maxLength={LIMITS.descriptionMax}
           aria-describedby="tool-description-count"
           onChange={(e) => setValues({ ...values, description: e.target.value })}
           placeholder="Anything a borrower should know"
         />
-        <p id="tool-description-count" className="mt-1 text-right text-xs text-stone-500">
+        <p
+          id="tool-description-count"
+          className="mt-1.5 text-right text-xs text-zinc-400 tabular-nums"
+        >
           {values.description.length}/{LIMITS.descriptionMax}
         </p>
       </div>
 
       <InlineError message={error} />
 
-      <div className="flex justify-end gap-2">
+      <ModalActions>
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancel
         </button>
         <button type="submit" className="btn-primary" disabled={pending || !nameValid}>
           {pending ? "Saving…" : submitLabel}
         </button>
-      </div>
+      </ModalActions>
     </form>
   );
 }

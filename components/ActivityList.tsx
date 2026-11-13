@@ -48,31 +48,31 @@ export function describeActivity(a: Activity): {
 }
 
 const DOT: Record<"ok" | "pending" | "error", string> = {
-  ok: "bg-emerald-500",
-  pending: "bg-amber-400",
-  error: "bg-red-500",
+  ok: "bg-brand-500 ring-brand-100",
+  pending: "bg-amber-400 ring-amber-100 animate-pulse",
+  error: "bg-red-500 ring-red-100",
 };
 
 /** Recent n8n activity for one loan (bonus requirement). */
 export function ActivityList({ activity }: { activity: Activity[] }) {
   if (activity.length === 0) return null;
   return (
-    <div className="mt-3 border-t border-stone-100 pt-3">
-      <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">
-        Automation
-      </p>
-      <ul className="mt-1.5 space-y-1">
+    <div className="mt-4 rounded-lg bg-zinc-50/80 px-3.5 py-3 ring-1 ring-zinc-100 ring-inset">
+      <p className="eyebrow text-[10px]">Automation</p>
+      <ul className="mt-2 space-y-1.5">
         {activity.map((a) => {
           const { text, tone } = describeActivity(a);
           return (
             <li
               key={a._id}
-              className="flex items-center gap-2 text-xs text-stone-600"
+              className={`flex items-center gap-2.5 text-xs ${
+                tone === "error" ? "text-red-700" : "text-zinc-600"
+              }`}
               title={a.lastError ?? a.message ?? undefined}
             >
               <span
                 aria-hidden
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[tone]}`}
+                className={`size-1.5 shrink-0 rounded-full ring-4 ${DOT[tone]}`}
               />
               {text}
             </li>

@@ -1,31 +1,237 @@
 @import "tailwindcss";
 
+/* Dark mode follows a `.dark` class on <html>, set by the theme toggle (and a
+   tiny pre-paint script in layout.tsx so there is no flash). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme {
+  /* Brand: a deep, confident green. */
+  --color-brand-50: oklch(0.977 0.018 163);
+  --color-brand-100: oklch(0.948 0.045 163);
+  --color-brand-200: oklch(0.9 0.08 163);
+  --color-brand-300: oklch(0.83 0.12 163);
+  --color-brand-400: oklch(0.74 0.15 163);
+  --color-brand-500: oklch(0.64 0.15 163);
+  --color-brand-600: oklch(0.55 0.13 163);
+  --color-brand-700: oklch(0.47 0.11 163);
+  --color-brand-800: oklch(0.39 0.09 163);
+  --color-brand-900: oklch(0.32 0.07 163);
+  --color-brand-950: oklch(0.22 0.05 163);
+
+  /* Solid accent for primary buttons; stays saturated in both themes. */
+  --color-accent: oklch(0.47 0.11 163);
+  --color-accent-hover: oklch(0.39 0.09 163);
+  --color-on-accent: #fff;
+
+  --shadow-card: 0 1px 2px 0 rgb(24 24 27 / 0.04), 0 1px 3px 0 rgb(24 24 27 / 0.04);
+  --shadow-card-hover:
+    0 4px 12px -2px rgb(24 24 27 / 0.08), 0 2px 4px -2px rgb(24 24 27 / 0.04);
+  --shadow-pop: 0 24px 48px -12px rgb(24 24 27 / 0.25);
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-pop-in: pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+}
+
+/* Clerk's modal and user menu read these (see layout.tsx). */
+:root {
+  --clerk-bg: #ffffff;
+  --clerk-fg: #18181b;
+  --clerk-muted: #71717a;
+  --clerk-neutral: #000000;
+  --clerk-input: #ffffff;
+}
+
+/* Dark theme: remap the neutral scale and soften accent tints, so every
+   existing utility (bg-white, text-zinc-500, bg-amber-50 …) adapts on its own. */
+.dark {
+  color-scheme: dark;
+
+  --color-white: #121214;
+  --color-zinc-50: #09090b;
+  --color-zinc-100: #1c1c20;
+  --color-zinc-200: #29292e;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-400: #71717a;
+  --color-zinc-500: #a1a1aa;
+  --color-zinc-600: #b9b9c0;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-950: #fafafa;
+
+  --color-brand-50: color-mix(in oklab, var(--color-brand-500) 11%, transparent);
+  --color-brand-100: color-mix(in oklab, var(--color-brand-500) 18%, transparent);
+  --color-brand-200: color-mix(in oklab, var(--color-brand-500) 30%, transparent);
+  --color-brand-600: var(--color-brand-400);
+  --color-brand-700: var(--color-brand-300);
+  --color-brand-800: color-mix(in oklab, var(--color-brand-300) 75%, white);
+  --color-amber-50: color-mix(in oklab, var(--color-amber-500) 11%, transparent);
+  --color-amber-100: color-mix(in oklab, var(--color-amber-500) 18%, transparent);
+  --color-amber-200: color-mix(in oklab, var(--color-amber-500) 30%, transparent);
+  --color-amber-600: var(--color-amber-400);
+  --color-amber-700: var(--color-amber-300);
+  --color-amber-800: color-mix(in oklab, var(--color-amber-300) 75%, white);
+  --color-sky-50: color-mix(in oklab, var(--color-sky-500) 11%, transparent);
+  --color-sky-100: color-mix(in oklab, var(--color-sky-500) 18%, transparent);
+  --color-sky-200: color-mix(in oklab, var(--color-sky-500) 30%, transparent);
+  --color-sky-600: var(--color-sky-400);
+  --color-sky-700: var(--color-sky-300);
+  --color-sky-800: color-mix(in oklab, var(--color-sky-300) 75%, white);
+  --color-emerald-50: color-mix(in oklab, var(--color-emerald-500) 11%, transparent);
+  --color-emerald-100: color-mix(in oklab, var(--color-emerald-500) 18%, transparent);
+  --color-emerald-200: color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
+  --color-emerald-600: var(--color-emerald-400);
+  --color-emerald-700: var(--color-emerald-300);
+  --color-emerald-800: color-mix(in oklab, var(--color-emerald-300) 75%, white);
+  --color-rose-50: color-mix(in oklab, var(--color-rose-500) 11%, transparent);
+  --color-rose-100: color-mix(in oklab, var(--color-rose-500) 18%, transparent);
+  --color-rose-200: color-mix(in oklab, var(--color-rose-500) 30%, transparent);
+  --color-rose-600: var(--color-rose-400);
+  --color-rose-700: var(--color-rose-300);
+  --color-rose-800: color-mix(in oklab, var(--color-rose-300) 75%, white);
+  --color-orange-50: color-mix(in oklab, var(--color-orange-500) 11%, transparent);
+  --color-orange-100: color-mix(in oklab, var(--color-orange-500) 18%, transparent);
+  --color-orange-200: color-mix(in oklab, var(--color-orange-500) 30%, transparent);
+  --color-orange-600: var(--color-orange-400);
+  --color-orange-700: var(--color-orange-300);
+  --color-orange-800: color-mix(in oklab, var(--color-orange-300) 75%, white);
+  --color-cyan-50: color-mix(in oklab, var(--color-cyan-500) 11%, transparent);
+  --color-cyan-100: color-mix(in oklab, var(--color-cyan-500) 18%, transparent);
+  --color-cyan-200: color-mix(in oklab, var(--color-cyan-500) 30%, transparent);
+  --color-cyan-600: var(--color-cyan-400);
+  --color-cyan-700: var(--color-cyan-300);
+  --color-cyan-800: color-mix(in oklab, var(--color-cyan-300) 75%, white);
+  --color-violet-50: color-mix(in oklab, var(--color-violet-500) 11%, transparent);
+  --color-violet-100: color-mix(in oklab, var(--color-violet-500) 18%, transparent);
+  --color-violet-200: color-mix(in oklab, var(--color-violet-500) 30%, transparent);
+  --color-violet-600: var(--color-violet-400);
+  --color-violet-700: var(--color-violet-300);
+  --color-violet-800: color-mix(in oklab, var(--color-violet-300) 75%, white);
+  --color-red-50: color-mix(in oklab, var(--color-red-500) 11%, transparent);
+  --color-red-100: color-mix(in oklab, var(--color-red-500) 18%, transparent);
+  --color-red-200: color-mix(in oklab, var(--color-red-500) 30%, transparent);
+  --color-red-600: var(--color-red-400);
+  --color-red-700: var(--color-red-300);
+  --color-red-800: color-mix(in oklab, var(--color-red-300) 75%, white);
+  --color-teal-50: color-mix(in oklab, var(--color-teal-500) 11%, transparent);
+  --color-teal-100: color-mix(in oklab, var(--color-teal-500) 18%, transparent);
+  --color-teal-200: color-mix(in oklab, var(--color-teal-500) 30%, transparent);
+  --color-teal-600: var(--color-teal-400);
+  --color-teal-700: var(--color-teal-300);
+  --color-teal-800: color-mix(in oklab, var(--color-teal-300) 75%, white);
+
+  --color-accent: oklch(0.55 0.13 163);
+  --color-accent-hover: oklch(0.6 0.14 163);
+
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-card-hover: 0 8px 20px -4px rgb(0 0 0 / 0.6);
+  --shadow-pop: 0 24px 48px -12px rgb(0 0 0 / 0.7);
+
+  --clerk-bg: #121214;
+  --clerk-fg: #fafafa;
+  --clerk-muted: #a1a1aa;
+  --clerk-neutral: #ffffff;
+  --clerk-input: #1c1c20;
+}
+
+.dark ::selection {
+  background: oklch(0.55 0.13 163 / 0.45);
+  color: #fff;
+}
+
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
-  @apply bg-stone-50 text-stone-900;
+  @apply bg-zinc-50 text-zinc-900;
+  font-feature-settings:
+    "cv11" 1,
+    "ss01" 1;
 }
 
-/* A few shared control styles, so pages don't repeat long class strings. */
+::selection {
+  @apply bg-brand-200 text-brand-950;
+}
+
+/* Shared control styles, so pages don't repeat long class strings.
+   Kept in the components layer so plain utilities on an element still win. */
 @layer components {
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply focus-visible:outline-brand-600 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3.5 text-sm font-medium whitespace-nowrap transition-all duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0;
+  }
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply bg-accent hover:bg-accent-hover text-on-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.12),0_1px_2px_rgb(0_0_0/0.1)];
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply shadow-card border border-zinc-200 bg-white text-zinc-800 hover:border-zinc-300 hover:bg-zinc-50;
+  }
+  .btn-ghost {
+    @apply text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply shadow-card border border-zinc-200 bg-white text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:outline-red-600;
   }
+  .btn-sm {
+    @apply h-8 rounded-md px-2.5 text-[13px] [&_svg]:size-3.5;
+  }
+  .btn-lg {
+    @apply h-11 rounded-xl px-5 text-[15px];
+  }
+
   .input {
-    @apply w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-xs focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none;
+    @apply shadow-card focus:border-brand-600 focus:ring-brand-600/10 block w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 hover:border-zinc-300 focus:ring-4 focus:outline-none;
+  }
+  select.input {
+    @apply appearance-none bg-[length:1rem] bg-[right_0.65rem_center] bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-stone-700;
+    @apply mb-1.5 block text-sm font-medium text-zinc-800;
   }
-  .card {
-    @apply rounded-lg border border-stone-200 bg-white p-4 shadow-xs;
+  .card,
+  .card-interactive {
+    @apply shadow-card rounded-xl border border-zinc-200/80 bg-white p-5;
   }
+  .card-interactive {
+    @apply hover:shadow-card-hover transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-300;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold tracking-wider text-zinc-500 uppercase;
+  }
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(24 24 27 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(24 24 27 / 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+.dark .bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.05) 1px, transparent 1px);
 }

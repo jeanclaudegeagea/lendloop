@@ -7,6 +7,7 @@ import {
   type CurrentUser,
 } from "@/components/providers/CurrentUserProvider";
 import { QueryBoundary } from "@/components/ui/QueryBoundary";
+import { LockIcon, ShieldIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/states";
 
 /**
@@ -29,6 +30,7 @@ export function RequireUser({
   if (!isAuthenticated || !user) {
     return (
       <EmptyState
+        icon={LockIcon}
         title="Sign in to continue"
         description="You need an account to lend or borrow tools."
         action={
@@ -43,7 +45,11 @@ export function RequireUser({
   }
   if (adminOnly && user.role !== "admin") {
     return (
-      <EmptyState title="Admins only" description="You don't have access to this page." />
+      <EmptyState
+        icon={ShieldIcon}
+        title="Admins only"
+        description="You don't have access to this page."
+      />
     );
   }
   return <QueryBoundary>{children(user)}</QueryBoundary>;

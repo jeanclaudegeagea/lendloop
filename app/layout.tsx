@@ -1,32 +1,57 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ConvexClientProvider } from "@/components/providers/ConvexClientProvider";
 import { CurrentUserProvider } from "@/components/providers/CurrentUserProvider";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "LendLoop",
   description: "Borrow what you need. Lend what you don't.",
 };
 
+// Matches Clerk's sign-in modal and user menu to the app's look. The CSS
+// variables switch with the light/dark theme (see globals.css).
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#047857",
+    colorBackground: "var(--clerk-bg)",
+    colorForeground: "var(--clerk-fg)",
+    colorMutedForeground: "var(--clerk-muted)",
+    colorNeutral: "var(--clerk-neutral)",
+    colorInput: "var(--clerk-input)",
+    colorInputForeground: "var(--clerk-fg)",
+    borderRadius: "0.625rem",
+    fontFamily: "var(--font-geist-sans)",
+  },
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // The theme script adds the "dark" class before React hydrates.
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="flex min-h-full flex-col">
-        <ClerkProvider>
+        <ClerkProvider appearance={clerkAppearance}>
           <ConvexClientProvider>
             <CurrentUserProvider>
               <SiteHeader />
-              <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+              <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
                 {children}
               </main>
-              <footer className="border-t border-stone-200 py-6 text-center text-xs text-stone-500">
-                LendLoop: a neighborhood tool-lending board
-              </footer>
+              <SiteFooter />
             </CurrentUserProvider>
           </ConvexClientProvider>
         </ClerkProvider>

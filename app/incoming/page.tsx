@@ -4,11 +4,13 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { LoanCard, type LoanView } from "@/components/LoanCard";
 import { RequireUser } from "@/components/RequireUser";
+import { CheckIcon, InboxIcon, XIcon } from "@/components/ui/icons";
 import {
   EmptyState,
   InlineError,
   ListSkeleton,
   PageHeader,
+  SectionHeading,
 } from "@/components/ui/states";
 import { useMutationRunner } from "@/lib/useMutationRunner";
 
@@ -16,8 +18,9 @@ export default function IncomingRequestsPage() {
   return (
     <>
       <PageHeader
+        eyebrow="Lending"
         title="Incoming requests"
-        description="Requests to borrow your tools."
+        description="Approve requests, track what's out, and mark tools returned."
       />
       <RequireUser>{() => <IncomingList />}</RequireUser>
     </>
@@ -31,6 +34,7 @@ function IncomingList() {
   if (loans.length === 0) {
     return (
       <EmptyState
+        icon={InboxIcon}
         title="No requests yet"
         description="When a neighbor asks to borrow one of your tools, it shows up here."
       />
@@ -42,7 +46,7 @@ function IncomingList() {
   const history = loans.filter((l) => l.status === "declined" || l.status === "returned");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <LoanSection
         title="Needs your answer"
         loans={needsAnswer}
@@ -69,11 +73,11 @@ function LoanSection({
 }) {
   return (
     <section aria-label={title}>
-      <h2 className="mb-3 text-sm font-semibold tracking-wide text-stone-500 uppercase">
-        {title} <span className="font-normal">({loans.length})</span>
-      </h2>
+      <SectionHeading title={title} count={loans.length} />
       {loans.length === 0 ? (
-        <p className="text-sm text-stone-500">{empty}</p>
+        <p className="rounded-xl border border-dashed border-zinc-200 px-4 py-5 text-center text-sm text-zinc-400">
+          {empty}
+        </p>
       ) : (
         <ul className="space-y-3">
           {loans.map((loan) => (
@@ -100,7 +104,7 @@ function LenderActions({ loan }: { loan: LoanView }) {
 
   if (loan.status === "requested") {
     return (
-      <div className="flex flex-col items-end">
+      <div className="flex flex-col sm:items-end">
         <div className="flex gap-2">
           <button
             type="button"
@@ -108,6 +112,7 @@ function LenderActions({ loan }: { loan: LoanView }) {
             disabled={busy}
             onClick={() => void approve.run({ loanId: loan._id })}
           >
+            <CheckIcon />
             {approve.pending ? "Approving…" : "Approve"}
           </button>
           <button
@@ -116,6 +121,7 @@ function LenderActions({ loan }: { loan: LoanView }) {
             disabled={busy}
             onClick={() => void decline.run({ loanId: loan._id })}
           >
+            <XIcon />
             {decline.pending ? "Declining…" : "Decline"}
           </button>
         </div>
@@ -125,13 +131,14 @@ function LenderActions({ loan }: { loan: LoanView }) {
   }
   if (loan.status === "approved" || loan.status === "overdue") {
     return (
-      <div className="flex flex-col items-end">
+      <div className="flex flex-col sm:items-end">
         <button
           type="button"
           className="btn-secondary"
           disabled={busy}
           onClick={() => void markReturned.run({ loanId: loan._id })}
         >
+          <CheckIcon />
           {markReturned.pending ? "Saving…" : "Mark returned"}
         </button>
         <InlineError message={error} />
