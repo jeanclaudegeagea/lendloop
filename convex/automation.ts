@@ -37,7 +37,6 @@ export const getNotificationPayload = internalQuery({
     const loan = await ctx.db.get(event.loanId);
     if (!loan) return null;
     const tool = await ctx.db.get(loan.toolId);
-    // Requests go to the lender; every later status change goes to the borrower.
     // Requests and cancellations go to the lender; decisions go to the borrower.
     const toLender = event.event === "loan_requested" || event.event === "loan_cancelled";
     const recipientId = toLender ? loan.lenderId : loan.borrowerId;

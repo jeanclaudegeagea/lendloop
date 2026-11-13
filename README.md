@@ -2,11 +2,12 @@
 
 > Borrow what you need. Lend what you don't.
 
-LendLoop is a neighborhood tool-lending board. Neighbors list tools they're willing to lend,
-request to borrow each other's tools for a date range, and the owner approves, declines and
-marks them returned. Borrowers can cancel a request while it's pending. n8n handles the automation: a notification on every request and status
-change, and a daily reminder for overdue loans. Every run is written back to the app, so
-each loan shows activity such as _"Approval notification sent 1 hour ago"_.
+LendLoop is a neighborhood tool-lending board. Neighbors list tools they're willing to
+lend, request to borrow each other's tools for a date range, and the owner approves,
+declines and marks them returned. Borrowers can cancel a request while it's pending. n8n
+handles the automation: a notification on every request and status change, and a daily
+reminder for overdue loans. Every run is written back to the app, so each loan shows
+activity such as _"Approval notification sent 1 hour ago"_.
 
 The UI updates live across users (Convex subscriptions), works on phones, and has a
 Light / Dark / System theme switch in the header.
