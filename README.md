@@ -2,6 +2,12 @@
 
 > Borrow what you need. Lend what you don't.
 
+![Incoming requests: approve or decline, an overdue loan, and the n8n notification activity on every loan](docs/screenshots/incoming.png)
+
+| Public page (no sign-in)                                             | Browse tools                                                                       | My requests, dark mode                                                                                 |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| ![Landing page with the public tool list](docs/screenshots/home.png) | ![Browse page with category filters and availability](docs/screenshots/browse.png) | ![My requests in dark mode with cancel and automation activity](docs/screenshots/my-requests-dark.png) |
+
 LendLoop is a neighborhood tool-lending board. Neighbors list tools they're willing to
 lend, request to borrow each other's tools for a date range, and the owner approves,
 declines and marks them returned. Borrowers can cancel a request while it's pending. n8n
@@ -595,6 +601,7 @@ scripts/                signed-request.mjs (call Convex endpoints as n8n does),
                         trigger-n8n-failure.mjs (test the n8n Error workflow)
 proxy.ts                Clerk route protection (Next 16's "middleware")
 docker-compose.yml      n8n (+ optional cloudflared tunnel)
+docs/screenshots/       Images used in this README
 ```
 
 ---
