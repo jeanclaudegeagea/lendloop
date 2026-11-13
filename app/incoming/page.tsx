@@ -43,7 +43,9 @@ function IncomingList() {
 
   const needsAnswer = loans.filter((l) => l.status === "requested");
   const active = loans.filter((l) => l.status === "approved" || l.status === "overdue");
-  const history = loans.filter((l) => l.status === "declined" || l.status === "returned");
+  const history = loans.filter(
+    (l) => l.status === "declined" || l.status === "returned" || l.status === "cancelled",
+  );
 
   return (
     <div className="space-y-10">

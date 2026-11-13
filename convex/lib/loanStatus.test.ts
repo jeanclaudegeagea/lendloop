@@ -12,6 +12,7 @@ describe("loan status transitions", () => {
   const allowed: [LoanStatus, LoanStatus][] = [
     ["requested", "approved"],
     ["requested", "declined"],
+    ["requested", "cancelled"],
     ["approved", "returned"],
   ];
 
@@ -26,6 +27,8 @@ describe("loan status transitions", () => {
     ["declined", "approved"], // final state
     ["returned", "approved"], // final state
     ["returned", "requested"],
+    ["approved", "cancelled"], // too late to cancel once approved
+    ["cancelled", "approved"], // final state
   ] as [LoanStatus, LoanStatus][])("rejects %s -> %s", (from, to) => {
     expect(canTransition(from, to)).toBe(false);
     expect(() => assertTransition(from, to)).toThrow(/can't be marked/);

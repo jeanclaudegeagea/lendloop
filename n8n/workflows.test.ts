@@ -143,6 +143,19 @@ describe("workflow 1: verifying Convex's signature inside n8n", () => {
     });
   });
 
+  it.each([
+    "loan_requested",
+    "loan_approved",
+    "loan_declined",
+    "loan_returned",
+    "loan_cancelled",
+  ])("has a message template for %s", (event) => {
+    const [composed] = runCode(F, "Compose notification", [
+      { json: { payload: { ...payload, event } } as Item["json"] },
+    ]);
+    expect(composed.json.text).toContain(payload.toolName);
+  });
+
   it("signs the confirmation so Convex accepts it, without sending the email back", async () => {
     const { payload: verified } = verify(await webhookItem());
     const composed = runCode(F, "Compose notification", [

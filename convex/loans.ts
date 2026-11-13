@@ -102,6 +102,19 @@ export const markReturned = mutation({
   },
 });
 
+/** The borrower withdraws their own request while it's still pending. */
+export const cancel = mutation({
+  args: { loanId: v.id("loans") },
+  handler: async (ctx, { loanId }) => {
+    const user = await requireUser(ctx);
+    const loan = await getLoan(ctx, loanId);
+    assertLoanParticipant(user, loan, "borrower");
+    assertTransition(loan.status, "cancelled");
+    await ctx.db.patch(loan._id, { status: "cancelled", decidedAt: Date.now() });
+    await enqueueLoanNotification(ctx, loan._id, "loan_cancelled");
+  },
+});
+
 export const listMyRequests = query({
   args: {},
   handler: async (ctx) => {

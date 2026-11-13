@@ -27,6 +27,7 @@ export const loanStatusValidator = v.union(
   v.literal("approved"),
   v.literal("declined"),
   v.literal("returned"),
+  v.literal("cancelled"),
 );
 
 export const automationTypeValidator = v.union(
@@ -40,6 +41,7 @@ export const automationEventNameValidator = v.union(
   v.literal("loan_approved"),
   v.literal("loan_declined"),
   v.literal("loan_returned"),
+  v.literal("loan_cancelled"),
   v.literal("loan_overdue"),
   v.literal("workflow_failed"),
 );

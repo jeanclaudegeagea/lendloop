@@ -3,7 +3,11 @@ import type { Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 
 export type LoanEvent =
-  "loan_requested" | "loan_approved" | "loan_declined" | "loan_returned";
+  | "loan_requested"
+  | "loan_approved"
+  | "loan_declined"
+  | "loan_returned"
+  | "loan_cancelled";
 
 /**
  * Transactional outbox: the event row and the delivery job are written in the

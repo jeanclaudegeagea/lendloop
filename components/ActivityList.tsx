@@ -11,6 +11,7 @@ const EVENT_LABELS: Record<Activity["event"], string> = {
   loan_approved: "Approval",
   loan_declined: "Decline",
   loan_returned: "Return",
+  loan_cancelled: "Cancellation",
   loan_overdue: "Overdue reminder",
   workflow_failed: "Automation",
 };

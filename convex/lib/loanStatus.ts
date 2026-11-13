@@ -2,16 +2,17 @@ import { LIMITS } from "./constants";
 import { daysBetween, isValidDateString } from "./dates";
 import { fail } from "./errors";
 
-export type LoanStatus = "requested" | "approved" | "declined" | "returned";
+export type LoanStatus = "requested" | "approved" | "declined" | "returned" | "cancelled";
 /** "overdue" is computed, never stored. */
 export type DisplayStatus = LoanStatus | "overdue";
 
-// requested -> approved | declined; approved -> returned. Declined and returned are final.
+// requested -> approved | declined | cancelled; approved -> returned. The rest are final.
 const TRANSITIONS: Record<LoanStatus, readonly LoanStatus[]> = {
-  requested: ["approved", "declined"],
+  requested: ["approved", "declined", "cancelled"],
   approved: ["returned"],
   declined: [],
   returned: [],
+  cancelled: [],
 };
 
 export function canTransition(from: LoanStatus, to: LoanStatus): boolean {

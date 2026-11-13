@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import {
   daysFromToday,
   identities,
@@ -161,6 +161,44 @@ describe("borrowing rules", () => {
 });
 
 describe("loan permissions and transitions", () => {
+  it("only the borrower can cancel, only while pending, and the lender is notified", async () => {
+    const { alice, bob, loanId } = await aliceToolWithBobRequest();
+    const carol = await signIn(t, identities.carol);
+
+    await expect(alice.mutation(api.loans.cancel, { loanId })).rejects.toThrow(
+      /FORBIDDEN/,
+    );
+    await expect(carol.mutation(api.loans.cancel, { loanId })).rejects.toThrow(
+      /FORBIDDEN/,
+    );
+    await bob.mutation(api.loans.cancel, { loanId });
+    expect((await bob.query(api.loans.listMyRequests, {}))[0].status).toBe("cancelled");
+    await expect(bob.mutation(api.loans.cancel, { loanId })).rejects.toThrow(
+      /INVALID_TRANSITION/,
+    );
+
+    const event = await t.run((ctx) =>
+      ctx.db
+        .query("automationEvents")
+        .withIndex("by_idempotencyKey", (q) =>
+          q.eq("idempotencyKey", `notification:${loanId}:loan_cancelled`),
+        )
+        .unique(),
+    );
+    const data = await t.query(internal.automation.getNotificationPayload, {
+      eventId: event!._id,
+    });
+    expect(data?.payload.recipient.email).toBe(identities.alice.email);
+  });
+
+  it("a borrower can't cancel an approved loan", async () => {
+    const { alice, bob, loanId } = await aliceToolWithBobRequest();
+    await alice.mutation(api.loans.approve, { loanId });
+    await expect(bob.mutation(api.loans.cancel, { loanId })).rejects.toThrow(
+      /INVALID_TRANSITION/,
+    );
+  });
+
   it("the borrower can't approve their own request", async () => {
     const { bob, loanId } = await aliceToolWithBobRequest();
     await expect(bob.mutation(api.loans.approve, { loanId })).rejects.toThrow(

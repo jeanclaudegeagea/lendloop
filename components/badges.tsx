@@ -9,6 +9,7 @@ const STATUS_STYLES: Record<DisplayStatus, { pill: string; dot: string }> = {
   declined: { pill: "bg-zinc-100 text-zinc-600 ring-zinc-200", dot: "bg-zinc-400" },
   returned: { pill: "bg-sky-50 text-sky-800 ring-sky-200/80", dot: "bg-sky-500" },
   overdue: { pill: "bg-red-50 text-red-700 ring-red-200/80", dot: "bg-red-500" },
+  cancelled: { pill: "bg-zinc-100 text-zinc-600 ring-zinc-200", dot: "bg-zinc-400" },
 };
 
 const STATUS_LABELS: Record<DisplayStatus, string> = {
@@ -17,6 +18,7 @@ const STATUS_LABELS: Record<DisplayStatus, string> = {
   declined: "Declined",
   returned: "Returned",
   overdue: "Overdue",
+  cancelled: "Cancelled",
 };
 
 const pill =
