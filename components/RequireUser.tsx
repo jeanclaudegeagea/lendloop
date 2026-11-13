@@ -10,11 +10,7 @@ import { QueryBoundary } from "@/components/ui/QueryBoundary";
 import { LockIcon, ShieldIcon } from "@/components/ui/icons";
 import { EmptyState, ErrorState, ListSkeleton } from "@/components/ui/states";
 
-/**
- * Renders children only once the signed-in user's Convex row is ready.
- * With `adminOnly`, non-admins see a notice. That's for UX only; the admin
- * functions check the role again on the server.
- */
+/** `adminOnly` is UX only; admin functions check the role on the server. */
 export function RequireUser({
   children,
   adminOnly = false,

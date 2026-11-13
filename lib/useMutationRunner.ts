@@ -5,11 +5,7 @@ import { errorMessage } from "./errors";
 
 export type RunResult<T> = { ok: true; value: T } | { ok: false };
 
-/**
- * Wraps an async call (usually a Convex mutation) with pending and error
- * state, so every button shows a spinner and a readable error the same way.
- * `run` never throws; check `ok` on its result.
- */
+/** Pending and error state for a mutation. `run` never throws; check `ok`. */
 export function useMutationRunner<Args extends unknown[], Result>(
   fn: (...args: Args) => Promise<Result>,
 ) {

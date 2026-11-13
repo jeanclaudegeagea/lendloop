@@ -16,8 +16,7 @@ export const metadata: Metadata = {
   description: "Borrow what you need. Lend what you don't.",
 };
 
-// Matches Clerk's sign-in modal and user menu to the app's look. The CSS
-// variables switch with the light/dark theme (see globals.css).
+// Clerk's UI follows the app theme through CSS variables (globals.css).
 const clerkAppearance = {
   variables: {
     colorPrimary: "#047857",

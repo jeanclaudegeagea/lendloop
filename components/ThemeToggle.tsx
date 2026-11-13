@@ -15,10 +15,8 @@ const OPTIONS: { value: ThemePreference; label: string; Icon: typeof SunIcon }[]
   { value: "system", label: "System", Icon: MonitorIcon },
 ];
 
-/** Segmented Light / Dark / System switch. */
 export function ThemeToggle() {
-  // null on the server and during hydration, so nothing is highlighted
-  // until we can read the stored choice.
+  // null during SSR and hydration, so nothing is highlighted until the choice is known.
   const current = useSyncExternalStore(subscribeToTheme, readThemePreference, () => null);
 
   return (

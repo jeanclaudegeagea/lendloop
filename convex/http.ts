@@ -4,10 +4,8 @@ import { httpAction, type ActionCtx } from "./_generated/server";
 import { todayUTC } from "./lib/dates";
 import { SIGNATURE_HEADER, TIMESTAMP_HEADER, verifySignature } from "./lib/hmac";
 
-// Endpoints called by n8n. They're served on the deployment's
-// ".convex.site" URL. Every route checks the HMAC signature (secret
-// N8N_TO_CONVEX_SECRET) before parsing the body, reading data or writing.
-// All of them are POST so the signature covers a body, even when it's empty.
+// Endpoints for n8n, served on the .convex.site URL. The HMAC is checked before
+// the body is parsed. All POST, so the signature always covers a body.
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -37,11 +35,7 @@ function optionalString(body: JsonObject, key: string): string | undefined {
   return value;
 }
 
-/**
- * Wraps a handler with the checks every n8n endpoint needs:
- * body-size limit → signature → JSON parse → handler → error mapping.
- * 4xx means "don't retry, fix the request"; 5xx means "safe to retry".
- */
+/** Size limit, signature, JSON parse, handler. 4xx = don't retry, 5xx = safe to retry. */
 function signedEndpoint(
   handler: (ctx: ActionCtx, body: JsonObject) => Promise<Response>,
 ) {
@@ -62,7 +56,7 @@ function signedEndpoint(
         return json({ error: "Server misconfigured" }, 500);
       }
       console.warn(`Rejected unsigned/invalid request to ${path}: ${check.reason}`);
-      // The reason is in the logs; the caller only learns that it failed.
+      // The reason is logged, not returned.
       return json({ error: "Unauthorized" }, 401);
     }
 
@@ -88,7 +82,7 @@ function signedEndpoint(
 
 const http = httpRouter();
 
-/** Workflow 2: the daily list of overdue loans to remind. */
+/** Workflow 2: overdue loans to remind. */
 http.route({
   path: "/n8n/overdue-loans",
   method: "POST",
@@ -99,7 +93,7 @@ http.route({
   }),
 });
 
-/** Workflow 2: record that a reminder was sent. Idempotent on idempotencyKey. */
+/** Workflow 2: reminder write-back. */
 http.route({
   path: "/n8n/reminders",
   method: "POST",
@@ -117,12 +111,12 @@ http.route({
     if (result.result === "loan_not_found") return json({ error: "Unknown loan" }, 404);
     if (result.result === "invalid_key")
       return json({ error: "Key doesn't match loan" }, 400);
-    // A duplicate is still a success, so n8n's retry stops here.
+    // A duplicate counts as success, so n8n stops retrying.
     return json({ ok: true, duplicate: result.result === "duplicate" });
   }),
 });
 
-/** Workflow 1: n8n confirms it sent a (mock) notification. */
+/** Workflow 1: notification confirmation. */
 http.route({
   path: "/n8n/notifications",
   method: "POST",
@@ -136,7 +130,7 @@ http.route({
   }),
 });
 
-/** Error workflow: record a failed n8n execution. */
+/** Error workflow: a failed n8n execution. */
 http.route({
   path: "/n8n/automation-errors",
   method: "POST",

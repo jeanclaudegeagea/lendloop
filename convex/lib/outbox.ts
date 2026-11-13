@@ -6,14 +6,8 @@ export type LoanEvent =
   "loan_requested" | "loan_approved" | "loan_declined" | "loan_returned";
 
 /**
- * Transactional outbox: records a pending notification in the same
- * transaction as the loan change, then schedules the action that sends it to
- * n8n. If the mutation rolls back, the event and the scheduled job roll back
- * with it, so a notification is never lost or sent for a change that
- * didn't happen.
- *
- * Each event happens at most once per loan (the status machine guarantees
- * it), so `loanId + event` is a natural idempotency key.
+ * Transactional outbox: the event row and the delivery job are written in the
+ * same transaction as the loan change, so they commit or roll back together.
  */
 export async function enqueueLoanNotification(
   ctx: MutationCtx,

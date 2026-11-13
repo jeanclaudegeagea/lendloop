@@ -1,14 +1,7 @@
-// HMAC-SHA256 request signing, used in both directions (Convex → n8n and
-// n8n → Convex). Written against Web Crypto so it runs in Convex's default
-// runtime, in Vitest, and the same scheme is easy to reproduce in n8n.
-//
+// HMAC-SHA256 signing for both directions, on Web Crypto (runs in Convex and Vitest).
 //   X-LendLoop-Timestamp: <unix seconds>
 //   X-LendLoop-Signature: sha256=<hex HMAC of "<timestamp>.<raw body>">
-//
-// Putting the timestamp inside the signed string means it can't be changed
-// without breaking the signature. Rejecting old timestamps limits replays to
-// a 5-minute window, and idempotency keys make replays inside that window
-// harmless.
+// The timestamp is part of the signed string and must be within 5 minutes.
 
 export const TIMESTAMP_HEADER = "x-lendloop-timestamp";
 export const SIGNATURE_HEADER = "x-lendloop-signature";
@@ -40,7 +33,6 @@ function fromHex(hex: string): Uint8Array<ArrayBuffer> | null {
   return bytes;
 }
 
-/** Returns the header value "sha256=<hex>" for the given timestamp and body. */
 export async function signPayload(
   secret: string,
   timestamp: string,
@@ -55,7 +47,6 @@ export async function signPayload(
   return `sha256=${toHex(mac)}`;
 }
 
-/** Builds the two headers for an outgoing signed request. */
 export async function signedHeaders(
   secret: string,
   body: string,
@@ -90,8 +81,7 @@ export async function verifySignature(opts: {
   const provided = fromHex(signature.replace(/^sha256=/, ""));
   if (!provided) return { ok: false, reason: "bad_signature" };
 
-  // subtle.verify compares in constant time, so the check can't be timed to
-  // guess the signature one byte at a time.
+  // subtle.verify compares in constant time.
   const key = await importKey(secret, "verify");
   const valid = await crypto.subtle.verify(
     "HMAC",

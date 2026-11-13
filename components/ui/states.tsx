@@ -1,7 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { AlertIcon, BoxIcon, RefreshIcon } from "./icons";
 
-/** Placeholder cards shown while a list loads. */
 export function ListSkeleton({
   rows = 3,
   variant = "list",
@@ -87,7 +86,6 @@ export function ErrorState({
   );
 }
 
-/** Inline error under a form or button. */
 export function InlineError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
@@ -125,7 +123,6 @@ export function PageHeader({
   );
 }
 
-/** Small heading above a group of cards, with an optional count. */
 export function SectionHeading({
   id,
   title,

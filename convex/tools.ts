@@ -17,12 +17,7 @@ const toolFields = {
   description: v.string(),
 };
 
-/**
- * Public landing-page list. No auth required, so it returns ONLY the tool id,
- * name and category. The `returns` validator makes that a hard contract:
- * if someone later adds an owner field here, Convex rejects the response
- * instead of leaking it.
- */
+/** No auth, so only id, name and category. The `returns` validator enforces it. */
 export const listPublic = query({
   args: {},
   returns: v.array(
@@ -38,7 +33,6 @@ export const listPublic = query({
   },
 });
 
-/** All active tools with availability, for signed-in users. Never includes owner emails. */
 export const listAll = query({
   args: { category: v.optional(categoryValidator) },
   handler: async (ctx, { category }) => {
@@ -71,7 +65,6 @@ export const listAll = query({
   },
 });
 
-/** The caller's own active listings, with open request counts. */
 export const listMine = query({
   args: {},
   handler: async (ctx) => {
@@ -120,7 +113,6 @@ export const update = mutation({
   },
 });
 
-/** Owners can delete a listing unless it's currently lent out. */
 export const remove = mutation({
   args: { toolId: v.id("tools") },
   handler: async (ctx, { toolId }) => {
@@ -144,9 +136,7 @@ export const remove = mutation({
   },
 });
 
-// ---------------------------------------------------------------------------
 // Helpers shared with admin.ts
-// ---------------------------------------------------------------------------
 
 export async function getActiveTool(
   ctx: Pick<QueryCtx, "db">,
@@ -158,11 +148,7 @@ export async function getActiveTool(
   return tool;
 }
 
-/**
- * Soft-deletes a tool and declines its open requests (notifying each
- * borrower). Approved loans are left as they are so the lender can still
- * mark them returned.
- */
+/** Soft delete. Declines open requests; approved loans stay so they can be returned. */
 export async function deactivateTool(
   ctx: MutationCtx,
   tool: Doc<"tools">,
@@ -191,11 +177,6 @@ function publicToolFields(tool: Doc<"tools">) {
   };
 }
 
-/**
- * "on_loan" if an approved loan covers today or is overdue. Otherwise
- * "available", plus upcoming booked ranges (dates only) so borrowers can
- * pick free dates.
- */
 async function availability(
   ctx: Pick<QueryCtx, "db">,
   toolId: Id<"tools">,

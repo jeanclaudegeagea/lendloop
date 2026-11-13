@@ -8,10 +8,6 @@ export type ToolInput = {
   description: string;
 };
 
-/**
- * Normalizes and checks a listing. Convex validators have already checked
- * the types and enums; this enforces lengths and strips control characters.
- */
 export function cleanToolInput(input: ToolInput): ToolInput {
   const name = normalizeText(input.name);
   const description = normalizeText(input.description);
@@ -31,7 +27,6 @@ export function cleanToolInput(input: ToolInput): ToolInput {
   return { ...input, name, description };
 }
 
-/** Trims, collapses whitespace runs and drops control characters. */
 function normalizeText(value: string): string {
   return value
     .replace(/[\u0000-\u001f\u007f]/g, " ")

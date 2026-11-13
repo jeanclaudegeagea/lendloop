@@ -11,21 +11,14 @@ import { daysBetween } from "./lib/dates";
 import { signedHeaders } from "./lib/hmac";
 import { backoffMs, MAX_DELIVERY_ATTEMPTS } from "./lib/retry";
 
-// Everything here is internal: only other Convex functions (the outbox
-// action, the signed HTTP endpoints in http.ts) can call it, never a browser.
+// Internal only: called by the outbox action and the signed routes in http.ts.
 
 const DELIVERY_TIMEOUT_MS = 10_000;
 const MAX_MESSAGE_LENGTH = 500;
 
-// ---------------------------------------------------------------------------
 // Convex → n8n: loan notifications (workflow 1)
-// ---------------------------------------------------------------------------
 
-/**
- * The payload sent to n8n. Data minimization: only what's needed to
- * notify one person about one loan. No user ids, roles, Clerk data, or
- * the other party's email.
- */
+/** Only the recipient's contact details; no user ids, roles or the other party's email. */
 export type NotificationPayload = {
   eventId: Id<"automationEvents">;
   event: Doc<"automationEvents">["event"];
@@ -63,12 +56,7 @@ export const getNotificationPayload = internalQuery({
   },
 });
 
-/**
- * Sends one notification to n8n's webhook, signed with CONVEX_TO_N8N_SECRET.
- * On failure it reschedules itself with exponential backoff. After the last
- * attempt it marks the event failed and records an error event, so a
- * failure always shows up in the data and the UI.
- */
+/** Signs and POSTs one notification to n8n. Retries with backoff, then records the failure. */
 export const deliverNotification = internalAction({
   args: { eventId: v.id("automationEvents"), attempt: v.number() },
   handler: async (ctx, { eventId, attempt }) => {
@@ -147,7 +135,7 @@ export const recordDeliveryResult = internalMutation({
     const now = Date.now();
 
     if (error === undefined) {
-      // n8n accepted it. The workflow's callback may already have set the message.
+      // The n8n callback may already have set the message.
       await ctx.db.patch(eventId, {
         status: "sent",
         attempts: attempt,
@@ -177,7 +165,7 @@ export const recordDeliveryResult = internalMutation({
   },
 });
 
-/** Callback from workflow 1 once the (mock) notification has been sent. Idempotent. */
+/** n8n's confirmation after sending. Idempotent. */
 export const recordNotificationSent = internalMutation({
   args: { eventId: v.string(), message: v.string() },
   handler: async (ctx, { eventId, message }) => {
@@ -197,19 +185,13 @@ export const recordNotificationSent = internalMutation({
   },
 });
 
-// ---------------------------------------------------------------------------
 // n8n → Convex: overdue reminders (workflow 2)
-// ---------------------------------------------------------------------------
 
 export function reminderKey(loanId: Id<"loans">, today: string): string {
   return `reminder:${loanId}:${today}`;
 }
 
-/**
- * Approved loans past their end date, with only the fields a reminder needs.
- * Loans already reminded today are skipped, so re-running the workflow
- * doesn't send a second reminder.
- */
+/** Overdue approved loans, minus those already reminded today. */
 export const listOverdueLoans = internalQuery({
   args: { today: v.string() },
   handler: async (ctx, { today }) => {
@@ -248,11 +230,7 @@ export const listOverdueLoans = internalQuery({
   },
 });
 
-/**
- * Write-back from workflow 2. The idempotency key is unique: if n8n
- * retries after a timeout, the second call is a no-op that still returns
- * success, so n8n stops retrying.
- */
+/** Idempotent on idempotencyKey, so n8n retries are no-ops. */
 export const recordReminder = internalMutation({
   args: {
     loanId: v.string(),
@@ -264,7 +242,7 @@ export const recordReminder = internalMutation({
     const loanId = ctx.db.normalizeId("loans", args.loanId);
     const loan = loanId ? await ctx.db.get(loanId) : null;
     if (!loan) return { result: "loan_not_found" as const };
-    // The key must belong to this loan, so a caller can't attach a reminder to the wrong loan.
+    // The key must belong to this loan.
     if (!args.idempotencyKey.startsWith(`reminder:${loan._id}:`)) {
       return { result: "invalid_key" as const };
     }
@@ -289,11 +267,9 @@ export const recordReminder = internalMutation({
   },
 });
 
-// ---------------------------------------------------------------------------
 // n8n → Convex: error workflow
-// ---------------------------------------------------------------------------
 
-/** Records a failed n8n run. One record per execution, even if n8n posts twice. */
+/** One record per failed n8n execution. */
 export const recordAutomationError = internalMutation({
   args: {
     workflowName: v.string(),

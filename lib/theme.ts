@@ -1,16 +1,11 @@
-// Light / dark / system theme. The choice lives in localStorage; "system"
-// (the default) follows the OS setting and updates live when it changes.
+// Theme choice lives in localStorage; "system" (the default) follows the OS.
 
 export type ThemePreference = "light" | "dark" | "system";
 
 const STORAGE_KEY = "lendloop-theme";
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
-/**
- * Runs in <head> before first paint so a dark-mode visitor never sees a
- * flash of the light theme. Kept dependency-free and wrapped in try/catch
- * because localStorage can throw (private mode, blocked storage).
- */
+/** Runs before first paint, so there's no flash of the wrong theme. */
 export const themeInitScript = `(function(){try{var p=localStorage.getItem("${STORAGE_KEY}");var d=p==="dark"||(p!=="light"&&matchMedia("${DARK_QUERY}").matches);var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light"}catch(e){}})()`;
 
 export function readThemePreference(): ThemePreference {
@@ -44,7 +39,6 @@ export function setThemePreference(preference: ThemePreference) {
   listeners.forEach((notify) => notify());
 }
 
-/** For useSyncExternalStore: OS theme changes and other tabs. */
 export function subscribeToTheme(notify: () => void) {
   listeners.add(notify);
   const media = window.matchMedia(DARK_QUERY);

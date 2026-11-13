@@ -27,10 +27,7 @@ const EMPTY: ToolFormValues = {
   description: "",
 };
 
-/**
- * Create/edit form for a listing. The client-side checks are only for quick
- * feedback; the server checks the same rules (convex/lib/toolInput.ts).
- */
+/** Client checks are for quick feedback; the server enforces the same rules. */
 export function ToolForm({
   initial = EMPTY,
   submitLabel,

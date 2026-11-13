@@ -1,8 +1,6 @@
 import type { AuthConfig } from "convex/server";
 
-// Convex trusts JWTs issued by this Clerk instance, with audience "convex".
-// Set CLERK_JWT_ISSUER_DOMAIN in the Convex dashboard (or `npx convex env set`).
-// The value is the "Issuer" shown on Clerk's "convex" JWT template.
+// Trusts JWTs from Clerk's "convex" template. CLERK_JWT_ISSUER_DOMAIN is its Issuer.
 export default {
   providers: [
     {

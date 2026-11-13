@@ -9,7 +9,6 @@ import { formatRange } from "@/lib/format";
 
 export type LoanView = FunctionReturnType<typeof api.loans.listIncoming>[number];
 
-/** One loan: tool, dates, the other party, status, actions and automation activity. */
 export function LoanCard({
   loan,
   people,

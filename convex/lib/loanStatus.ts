@@ -3,14 +3,10 @@ import { daysBetween, isValidDateString } from "./dates";
 import { fail } from "./errors";
 
 export type LoanStatus = "requested" | "approved" | "declined" | "returned";
-/** What the UI shows. "overdue" is computed, never stored. */
+/** "overdue" is computed, never stored. */
 export type DisplayStatus = LoanStatus | "overdue";
 
-/**
- * The only allowed status changes. Declined and returned are final.
- *   requested -> approved | declined
- *   approved  -> returned
- */
+// requested -> approved | declined; approved -> returned. Declined and returned are final.
 const TRANSITIONS: Record<LoanStatus, readonly LoanStatus[]> = {
   requested: ["approved", "declined"],
   approved: ["returned"],
@@ -28,7 +24,6 @@ export function assertTransition(from: LoanStatus, to: LoanStatus): void {
   }
 }
 
-/** An approved loan whose end date has passed (and isn't returned) is overdue. */
 export function deriveStatus(
   loan: { status: LoanStatus; endDate: string },
   today: string,
@@ -36,7 +31,6 @@ export function deriveStatus(
   return loan.status === "approved" && loan.endDate < today ? "overdue" : loan.status;
 }
 
-/** Validates a requested date range. All dates are YYYY-MM-DD in UTC. */
 export function validateLoanDates(
   startDate: string,
   endDate: string,
@@ -48,7 +42,7 @@ export function validateLoanDates(
   if (startDate < today) fail("INVALID_INPUT", "The start date can't be in the past.");
   if (startDate > endDate)
     fail("INVALID_INPUT", "The end date must be on or after the start date.");
-  // +1 because both ends are inclusive: the 1st to the 1st is a one-day loan.
+  // Inclusive: the 1st to the 1st is one day.
   if (daysBetween(startDate, endDate) + 1 > LIMITS.maxLoanDays) {
     fail("INVALID_INPUT", `Loans can be at most ${LIMITS.maxLoanDays} days.`);
   }

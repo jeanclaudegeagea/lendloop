@@ -3,13 +3,8 @@ import { getCurrentUser, parseAdminEmails } from "./lib/auth";
 import { fail } from "./lib/errors";
 
 /**
- * Creates the caller's user row on first sign-in, and keeps name and email in
- * sync with Clerk after that. The client calls it once after Clerk signs in.
- *
- * Admin bootstrap: a new user is an admin only if their email is in the Convex
- * env var ADMIN_EMAILS and Clerk says it's verified. For an existing row the
- * role is never touched, so editing ADMIN_EMAILS can't silently promote
- * anyone. Later role changes go through the internal `admin:setRole`.
+ * Creates the user row on first sign-in, then keeps name and email in sync.
+ * Admin only if the email is in ADMIN_EMAILS and verified, and only at creation.
  */
 export const ensureCurrentUser = mutation({
   args: {},
@@ -18,8 +13,7 @@ export const ensureCurrentUser = mutation({
     if (!identity) fail("UNAUTHENTICATED", "You need to sign in.");
 
     const email = (identity.email ?? "").toLowerCase();
-    // Display names are shown to other users, so never derive one from the
-    // email address: fall back to the Clerk username, then "Neighbor".
+    // Other users see this name, so it's never derived from the email.
     const name = identity.name?.trim() || identity.nickname?.trim() || "Neighbor";
 
     const existing = await ctx.db
@@ -48,7 +42,6 @@ export const ensureCurrentUser = mutation({
   },
 });
 
-/** The caller's own profile, or null if signed out or not provisioned yet. */
 export const me = query({
   args: {},
   handler: async (ctx) => {

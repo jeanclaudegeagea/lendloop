@@ -14,10 +14,7 @@ import { useMutationRunner } from "@/lib/useMutationRunner";
 
 type Range = { startDate: string; endDate: string };
 
-/**
- * Date-range picker for a borrow request. Booked ranges are shown so people
- * pick free dates; the server checks overlap again either way.
- */
+/** Shows booked ranges so people pick free dates; the server re-checks overlap. */
 export function RequestLoanDialog({
   tool,
   onClose,

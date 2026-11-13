@@ -126,7 +126,7 @@ export default function HomePage() {
   );
 }
 
-/** Uses tools.listPublic, which returns only name and category, never owner details. */
+/** tools.listPublic returns only name and category. */
 function PublicToolList({ signedIn }: { signedIn: boolean }) {
   const tools = useQuery(api.tools.listPublic, {});
 

@@ -1,10 +1,6 @@
 import { ConvexError } from "convex/values";
 
-/**
- * Turns anything thrown by a Convex call into a message safe to show.
- * ConvexErrors from our `fail()` helper carry a user-facing message; anything
- * else is an unexpected server error, and its details stay in the logs.
- */
+/** Our fail() messages are shown as-is; anything unexpected stays generic. */
 export function errorMessage(error: unknown): string {
   if (error instanceof ConvexError) {
     const data: unknown = error.data;

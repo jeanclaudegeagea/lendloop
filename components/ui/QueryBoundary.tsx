@@ -7,11 +7,7 @@ import { ErrorState } from "./states";
 type Props = { children: ReactNode };
 type State = { error: unknown };
 
-/**
- * Convex's useQuery throws when a query fails (e.g. FORBIDDEN). This
- * catches it for one section of the page and shows an error with a retry,
- * instead of taking down the whole page.
- */
+/** useQuery throws on failure (e.g. FORBIDDEN); this contains it to one section. */
 export class QueryBoundary extends Component<Props, State> {
   state: State = { error: null };
 

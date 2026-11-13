@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 
-// Convex validators for the shared enums. They're listed out (not generated
-// from the constant arrays) so TypeScript keeps the literal types.
+// Listed out rather than generated from the arrays, so the literal types survive.
 
 export const roleValidator = v.union(v.literal("admin"), v.literal("user"));
 
@@ -36,7 +35,6 @@ export const automationTypeValidator = v.union(
   v.literal("error"),
 );
 
-/** What happened in the loan lifecycle that triggered the automation. */
 export const automationEventNameValidator = v.union(
   v.literal("loan_requested"),
   v.literal("loan_approved"),

@@ -1,7 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Redirects signed-out visitors away from app pages. This is a UX convenience
-// only: the real access checks happen in every Convex function.
+// UX only: the real access checks are in every Convex function.
 const isProtectedRoute = createRouteMatcher([
   "/tools(.*)",
   "/listings(.*)",

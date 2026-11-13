@@ -1,7 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 import type { ToolCategory } from "@/convex/lib/constants";
 
-/** Small stroke icon set (24px grid, 1.75 stroke), inlined so there's no icon dependency. */
 type IconProps = SVGProps<SVGSVGElement>;
 
 function icon(paths: ReactNode) {
@@ -168,7 +167,6 @@ export const CATEGORY_ICONS: Record<ToolCategory, ReturnType<typeof icon>> = {
   other: BoxIcon,
 };
 
-/** Tile + text tints per category, used on tool and loan cards. */
 export const CATEGORY_TINTS: Record<ToolCategory, string> = {
   power_tools: "bg-amber-50 text-amber-600 ring-amber-200/70",
   hand_tools: "bg-sky-50 text-sky-600 ring-sky-200/70",
@@ -212,7 +210,6 @@ const AVATAR_TINTS = [
   "bg-teal-100 text-teal-800",
 ];
 
-/** Initials avatar with a stable color per name. */
 export function Avatar({
   name,
   size = "sm",
@@ -244,7 +241,6 @@ export function Avatar({
   );
 }
 
-/** Brand mark: two links of a loop. */
 export function Logo({ className = "size-8" }: { className?: string }) {
   return (
     <span

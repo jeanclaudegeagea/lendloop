@@ -3,11 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { XIcon } from "./icons";
 
-/**
- * A modal built on the native <dialog> element, which gives focus trapping,
- * Esc to close and a backdrop for free. Mount it only while it should be
- * open; it opens itself on mount.
- */
+/** Native <dialog>: focus trap, Esc and backdrop for free. Mount it only while open. */
 export function Modal({
   title,
   description,
@@ -54,7 +50,6 @@ export function Modal({
   );
 }
 
-/** Footer row for modal forms: actions on the right, separated by a hairline. */
 export function ModalActions({ children }: { children: ReactNode }) {
   return (
     <div className="-mx-6 mt-6 -mb-6 flex justify-end gap-2 rounded-b-2xl border-t border-zinc-100 bg-zinc-50/70 px-6 py-4">

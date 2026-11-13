@@ -24,12 +24,7 @@ const CurrentUserContext = createContext<CurrentUserState>({
   error: null,
 });
 
-/**
- * After Clerk signs the user in, calls `users.ensureCurrentUser` once, so a
- * Convex user row exists before any page queries need it, then subscribes to
- * the user's profile. The role in it is only for showing or hiding UI; the
- * server checks it again on every call.
- */
+/** Creates the Convex user row after sign-in, then subscribes to it. The role is for UI only. */
 export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useConvexAuth();
   const { userId: clerkUserId } = useAuth();

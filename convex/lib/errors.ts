@@ -11,10 +11,7 @@ export type ErrorCode =
 
 export type AppErrorData = { code: ErrorCode; message: string };
 
-/**
- * Throws a ConvexError. Unlike a plain Error, its data reaches the client
- * intact, so the UI can show `message` and tests can assert on `code`.
- */
+/** Unlike a plain Error, ConvexError data reaches the client intact. */
 export function fail(code: ErrorCode, message: string): never {
   throw new ConvexError<AppErrorData>({ code, message });
 }

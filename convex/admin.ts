@@ -8,9 +8,7 @@ import { deactivateTool, getActiveTool } from "./tools";
 
 const MAX_LIST = 200;
 
-/** Every public function here starts with requireAdmin, which checks the role on the server. */
-
-/** Moderation: an admin can remove any listing, even one that's on loan. */
+/** Admins can remove any listing, even one on loan. */
 export const removeTool = mutation({
   args: { toolId: v.id("tools") },
   handler: async (ctx, { toolId }) => {
@@ -29,7 +27,6 @@ export const listAllLoans = query({
   },
 });
 
-/** Users with their listing counts, for the Trusted Lender toggle. */
 export const listUsers = query({
   args: {},
   handler: async (ctx) => {
@@ -67,9 +64,7 @@ export const setTrustedLender = mutation({
 });
 
 /**
- * Promotes or demotes a user. This is an internal mutation, so the browser
- * can't call it; only someone with deploy access can, from the CLI:
- *
+ * Internal, so only someone with deploy access can run it:
  *   npx convex run admin:setRole '{"email":"you@example.com","role":"admin"}'
  */
 export const setRole = internalMutation({

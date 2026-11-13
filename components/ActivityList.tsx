@@ -15,7 +15,6 @@ const EVENT_LABELS: Record<Activity["event"], string> = {
   workflow_failed: "Automation",
 };
 
-/** Turns an automation event into a sentence like "Reminder sent 2 days ago". */
 export function describeActivity(a: Activity): {
   text: string;
   tone: "ok" | "pending" | "error";
@@ -53,7 +52,6 @@ const DOT: Record<"ok" | "pending" | "error", string> = {
   error: "bg-red-500 ring-red-100",
 };
 
-/** Recent n8n activity for one loan (bonus requirement). */
 export function ActivityList({ activity }: { activity: Activity[] }) {
   if (activity.length === 0) return null;
   return (

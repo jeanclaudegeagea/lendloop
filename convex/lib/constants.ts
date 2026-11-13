@@ -1,5 +1,4 @@
-// Plain constants with no Convex imports, so both the Next.js client and the
-// Convex functions can import them and stay in sync.
+// No Convex imports, so the client and the Convex functions share these.
 
 export const TOOL_CATEGORIES = [
   "power_tools",

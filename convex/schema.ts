@@ -10,20 +10,14 @@ import {
   roleValidator,
 } from "./lib/validators";
 
-// Every document gets `_id` and `_creationTime` from Convex automatically,
-// so there are no separate `createdAt` fields.
-//
-// Dates for loans are "YYYY-MM-DD" strings (UTC calendar days): loans are
-// whole days, the strings compare correctly with < and >, and there are no
-// timezone off-by-one surprises.
+// Loan dates are UTC "YYYY-MM-DD" strings: whole days that compare correctly as strings.
 
 export default defineSchema({
   users: defineTable({
     clerkId: v.string(), // JWT `subject`
     name: v.string(),
     email: v.string(),
-    // Server-side only: set on first sign-in from ADMIN_EMAILS, or changed
-    // later with the internal `admin:setRole` mutation. Never sent by the client.
+    // Set server-side only: ADMIN_EMAILS at creation, or admin:setRole.
     role: roleValidator,
     isTrustedLender: v.boolean(),
   })
@@ -36,7 +30,7 @@ export default defineSchema({
     category: categoryValidator,
     condition: conditionValidator,
     description: v.string(),
-    // Soft delete keeps loan history readable after a listing is removed.
+    // Soft delete keeps loan history readable.
     isActive: v.boolean(),
   })
     .index("by_owner_active", ["ownerId", "isActive"])
@@ -64,8 +58,7 @@ export default defineSchema({
     type: automationTypeValidator,
     event: automationEventNameValidator,
     status: automationStatusValidator,
-    // Unique per logical event; checked before every insert so retries
-    // from n8n or the Convex scheduler never create duplicates.
+    // Unique per logical event; checked before every insert.
     idempotencyKey: v.string(),
     attempts: v.number(),
     message: v.optional(v.string()),

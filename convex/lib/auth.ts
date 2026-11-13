@@ -2,14 +2,10 @@ import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { fail } from "./errors";
 
-// Authorization helpers. Every public query and mutation goes through one of
-// these, so the rules live in one place and are enforced on the server no
-// matter what the UI does.
+// Authorization helpers; every public query and mutation starts with one.
 
-/** Anything with `auth` and a readable `db`: both QueryCtx and MutationCtx fit. */
 type AuthCtx = Pick<QueryCtx, "auth" | "db">;
 
-/** The caller's user row, or null if signed out or not provisioned yet. */
 export async function getCurrentUser(ctx: AuthCtx): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
@@ -19,10 +15,7 @@ export async function getCurrentUser(ctx: AuthCtx): Promise<Doc<"users"> | null>
     .unique();
 }
 
-/**
- * Checks the Clerk JWT (Convex validates the signature), then loads the
- * caller's row. The role comes from that row, never from the request.
- */
+/** Convex verifies the Clerk JWT. The role always comes from the users row. */
 export async function requireUser(ctx: AuthCtx): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) fail("UNAUTHENTICATED", "You need to sign in.");
@@ -40,8 +33,6 @@ export async function requireAdmin(ctx: AuthCtx): Promise<Doc<"users">> {
   return user;
 }
 
-/** The pure checks below take documents, which keeps them easy to unit test. */
-
 export function assertToolOwner(user: Doc<"users">, tool: Doc<"tools">): void {
   if (tool.ownerId !== user._id)
     fail("FORBIDDEN", "You can only change your own listings.");
@@ -49,10 +40,6 @@ export function assertToolOwner(user: Doc<"users">, tool: Doc<"tools">): void {
 
 export type LoanSide = "borrower" | "lender";
 
-/**
- * Checks that the user is on the loan. With `side`, they must be on that
- * specific side (e.g. only the lender may approve).
- */
 export function assertLoanParticipant(
   user: Doc<"users">,
   loan: Doc<"loans">,
@@ -78,7 +65,6 @@ export function assertLoanParticipant(
   }
 }
 
-/** Parses the ADMIN_EMAILS env var ("a@x.com, b@y.com") into a lowercase set. */
 export function parseAdminEmails(raw: string | undefined): Set<string> {
   return new Set(
     (raw ?? "")

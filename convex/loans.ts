@@ -11,7 +11,6 @@ import { getActiveTool } from "./tools";
 const MAX_LIST = 200;
 const ACTIVITY_PER_LOAN = 5;
 
-/** Borrower asks to borrow a tool for an inclusive date range. */
 export const request = mutation({
   args: { toolId: v.id("tools"), startDate: v.string(), endDate: v.string() },
   handler: async (ctx, { toolId, startDate, endDate }) => {
@@ -47,12 +46,7 @@ export const request = mutation({
   },
 });
 
-/**
- * Lender approves. Overlap is checked again here, because two requests can
- * be valid when made but conflict once one is approved. Other pending
- * requests that now overlap are declined automatically, so the lender isn't
- * left with requests they can't approve.
- */
+/** Overlap is re-checked here; overlapping pending requests are auto-declined. */
 export const approve = mutation({
   args: { loanId: v.id("loans") },
   handler: async (ctx, { loanId }) => {
@@ -95,7 +89,7 @@ export const decline = mutation({
   },
 });
 
-/** Only the lender confirms a return: they're the one who gets the tool back. */
+/** Lender only: they're the one who gets the tool back. */
 export const markReturned = mutation({
   args: { loanId: v.id("loans") },
   handler: async (ctx, { loanId }) => {
@@ -108,7 +102,6 @@ export const markReturned = mutation({
   },
 });
 
-/** "My requests": loans where the caller is the borrower. */
 export const listMyRequests = query({
   args: {},
   handler: async (ctx) => {
@@ -122,7 +115,6 @@ export const listMyRequests = query({
   },
 });
 
-/** "Incoming requests": loans on the caller's tools. */
 export const listIncoming = query({
   args: {},
   handler: async (ctx) => {
@@ -136,9 +128,7 @@ export const listIncoming = query({
   },
 });
 
-// ---------------------------------------------------------------------------
 // Helpers (also used by admin.ts)
-// ---------------------------------------------------------------------------
 
 async function getLoan(ctx: Pick<QueryCtx, "db">, loanId: Id<"loans">) {
   const loan = await ctx.db.get(loanId);
@@ -157,11 +147,7 @@ function loansForTool(
     .collect();
 }
 
-/**
- * Shapes a loan for the UI, with the derived status (overdue) and recent
- * automation activity. `counterpart` is whose name to include: the other
- * party's display name only, never their email.
- */
+/** Counterpart's display name only, never their email. */
 export async function toLoanView(
   ctx: Pick<QueryCtx, "db">,
   loan: Doc<"loans">,
