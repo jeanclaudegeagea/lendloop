@@ -4,7 +4,7 @@
 
 LendLoop is a neighborhood tool-lending board. Neighbors list tools they're willing to lend,
 request to borrow each other's tools for a date range, and the owner approves, declines and
-marks them returned. n8n handles the automation: a notification on every request and status
+marks them returned. Borrowers can cancel a request while it's pending. n8n handles the automation: a notification on every request and status
 change, and a daily reminder for overdue loans. Every run is written back to the app, so
 each loan shows activity such as _"Approval notification sent 1 hour ago"_.
 
@@ -13,6 +13,21 @@ Light / Dark / System theme switch in the header.
 
 **Stack:** Next.js 16 (App Router, TypeScript strict) · Clerk · Convex · n8n (self-hosted,
 Docker) · Tailwind CSS 4 · Vitest + convex-test
+
+## Quick start
+
+```bash
+git clone https://github.com/jeanclaudegeagea/lendloop.git && cd lendloop && npm install
+cp .env.example .env.local        # add your Clerk keys (step 2 below)
+npx convex dev                    # terminal 1, keep it running; then set the Convex env vars (step 3)
+cp n8n/.env.example n8n/.env      # same secrets as Convex (step 5a)
+docker compose up -d
+docker compose exec n8n n8n import:workflow --separate --input=/workflows
+# open http://localhost:5678, publish the 3 workflows, set N8N_WEBHOOK_URL (step 5c-d)
+npm run dev                       # terminal 2, then open http://localhost:3000
+```
+
+First time? Follow [Local setup](#local-setup) for the details behind each line.
 
 ---
 
@@ -69,7 +84,7 @@ flowchart LR
 ### Workflow 1: request notifications (Convex → n8n → Convex)
 
 ```
-borrower requests / lender approves|declines|returns
+borrower requests|cancels / lender approves|declines|returns
   └─ Convex mutation (one transaction):
        • updates the loan
        • inserts automationEvents row { status: "pending", idempotencyKey: notification:<loanId>:<event> }
@@ -436,12 +451,12 @@ it.
 **Authorization lives in Convex, not the UI.** Every public query and mutation starts with
 a helper from [`convex/lib/auth.ts`](./convex/lib/auth.ts):
 
-| Helper                                     | Guarantees                                                                                    |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `requireUser(ctx)`                         | Valid Clerk JWT (signature checked by Convex), then loads the `users` row by `subject`        |
-| `requireAdmin(ctx)`                        | `requireUser` + `role === "admin"` from the **database row**                                  |
-| `assertToolOwner(user, tool)`              | Only the owner edits or deletes a listing                                                     |
-| `assertLoanParticipant(user, loan, side?)` | Only the lender approves, declines or returns; borrowers and lenders see only their own loans |
+| Helper                                     | Guarantees                                                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `requireUser(ctx)`                         | Valid Clerk JWT (signature checked by Convex), then loads the `users` row by `subject`                        |
+| `requireAdmin(ctx)`                        | `requireUser` + `role === "admin"` from the **database row**                                                  |
+| `assertToolOwner(user, tool)`              | Only the owner edits or deletes a listing                                                                     |
+| `assertLoanParticipant(user, loan, side?)` | Only the lender approves, declines or returns; only the borrower cancels; each side sees only their own loans |
 
 The role is never read from the client or the JWT. Hiding the Admin tab and `proxy.ts`
 redirects are UX only, and the tests call functions directly to prove the server rejects
@@ -450,7 +465,8 @@ what the UI would hide.
 **Rules enforced server-side:** you can't borrow your own tool; start ≤ end; start isn't in
 the past; at most 30 days; no overlap with an approved loan (checked at request **and** at
 approval, to avoid race conditions); only valid status transitions
-(`requested → approved | declined`, `approved → returned`); and you can't delete a tool that
+(`requested → approved | declined | cancelled`, `approved → returned`); only the borrower
+can cancel, and only while the request is pending; and you can't delete a tool that
 is lent out.
 
 **Input validation.** All arguments use Convex validators (`v.*`), and categories and
@@ -538,7 +554,7 @@ provider, pass `eventId` as the provider's idempotency key (noted in the workflo
 ## Testing
 
 ```bash
-npm test          # Vitest: 66 tests
+npm test          # Vitest: 76 tests
 npm run lint      # ESLint (next + typescript + prettier-compat)
 npm run typecheck # tsc --noEmit
 npm run build     # production build
@@ -594,6 +610,10 @@ docker-compose.yml      n8n (+ optional cloudflared tunnel)
   and the lender can still mark it returned.
 - **Approving auto-declines overlapping pending requests**, so lenders aren't left with
   requests they can't approve.
+- **Email delivery is mocked.** The n8n workflows log each message (with a masked address)
+  instead of sending it, so the project runs without an email account or API key. Going live
+  means replacing the two mock Code nodes with a Resend or SMTP node and passing `eventId` as
+  the provider's idempotency key.
 - **Only the lender marks a loan returned**, because they're the one who receives the tool.
 - **Cache Components is off** (`next.config.ts`). All data comes from live Convex
   subscriptions on the client, so server caching would add nothing.
